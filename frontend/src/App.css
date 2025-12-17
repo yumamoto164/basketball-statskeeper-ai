@@ -1,0 +1,410 @@
+/* Basketball Stats Keeper App Styles */
+.App {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+/* Header Section */
+.header-section {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.main-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 0.5rem 0;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #666;
+  margin: 0;
+}
+
+/* Teams Container */
+.teams-container {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  justify-content: center;
+}
+
+/* Team Panel */
+.team-panel {
+  flex: 1;
+  max-width: 500px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Team Header */
+.team-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.team-pill {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.home-pill {
+  background-color: #2563eb;
+}
+
+.away-pill {
+  background-color: #dc2626;
+}
+
+.team-name-label {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+/* Team Name Input */
+.team-name-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  box-sizing: border-box;
+  background-color: #f5f5f5;
+  color: #1a1a1a;
+}
+
+.team-name-input::placeholder {
+  color: #6b7280;
+}
+
+.team-name-input:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+/* Section Labels */
+.section-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+/* Add Player Section */
+.add-player-section {
+  margin-bottom: 2rem;
+}
+
+.add-player-inputs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.jersey-input {
+  width: 60px;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  text-align: center;
+  background-color: #f5f5f5;
+  color: #1a1a1a;
+}
+
+.jersey-input::placeholder {
+  color: #6b7280;
+}
+
+.jersey-input:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.player-name-input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background-color: #f5f5f5;
+  color: #1a1a1a;
+}
+
+.player-name-input::placeholder {
+  color: #6b7280;
+}
+
+.player-name-input:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.add-button {
+  width: 100%;
+  padding: 0.625rem;
+  background-color: #6b7280;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.add-button:hover {
+  background-color: #4b5563;
+}
+
+.add-button:disabled {
+  background-color: #d1d5db;
+  cursor: not-allowed;
+}
+
+/* Roster Section */
+.roster-section {
+  margin-top: 1.5rem;
+}
+
+.roster-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Player Card */
+.player-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background-color: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.player-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #374151;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.player-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.player-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.player-jersey {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.player-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.edit-button {
+  padding: 0.375rem 0.75rem;
+  background-color: #6b7280;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.edit-button:hover {
+  background-color: #4b5563;
+}
+
+.remove-button {
+  padding: 0.375rem 0.75rem;
+  background-color: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.remove-button:hover {
+  background-color: #b91c1c;
+}
+
+/* Edit Player Form */
+.edit-player-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.jersey-input-small {
+  width: 50px;
+  padding: 0.375rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  text-align: center;
+  background-color: #f5f5f5;
+  color: #1a1a1a;
+}
+
+.jersey-input-small::placeholder {
+  color: #6b7280;
+}
+
+.player-name-input-small {
+  flex: 1;
+  padding: 0.375rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  background-color: #f5f5f5;
+  color: #1a1a1a;
+}
+
+.player-name-input-small::placeholder {
+  color: #6b7280;
+}
+
+.save-button {
+  padding: 0.375rem 0.75rem;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.save-button:hover {
+  background-color: #1d4ed8;
+}
+
+.cancel-button {
+  padding: 0.375rem 0.75rem;
+  background-color: #6b7280;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.cancel-button:hover {
+  background-color: #4b5563;
+}
+
+/* Start Game Button */
+.start-game-button {
+  width: 100%;
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 1rem;
+  background-color: #374151;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: block;
+}
+
+.start-game-button:hover:not(:disabled) {
+  background-color: #1f2937;
+}
+
+.start-game-button:disabled {
+  background-color: #d1d5db;
+  cursor: not-allowed;
+  color: #9ca3af;
+}
+
+/* Coming Soon Text */
+.coming-soon {
+  text-align: center;
+  margin-top: 2rem;
+  color: #888;
+  font-size: 0.875rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .teams-container {
+    flex-direction: column;
+  }
+
+  .team-panel {
+    max-width: 100%;
+  }
+
+  .main-title {
+    font-size: 2rem;
+  }
+}
+
+/* Stat Keeper Styles (for when game starts) */
+table {
+  border-collapse: collapse;
+  margin-top: 1rem;
+  width: 100%;
+}
+
+th,
+td {
+  padding: 0.4rem 0.7rem;
+  text-align: center;
+  border: 1px solid #d1d5db;
+}
