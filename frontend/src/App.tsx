@@ -55,12 +55,8 @@ function App() {
           onEndGame={() => setStarted(false)}
         />
       )}
-      {!started && (
-        <p className="coming-soon">Voice-to-text AI stat entry coming soon!</p>
-      )}
     </div>
   );
 }
 
 export default App;
-

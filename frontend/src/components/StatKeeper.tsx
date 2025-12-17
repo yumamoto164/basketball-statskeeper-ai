@@ -4,6 +4,7 @@ import GameHeader from "./GameHeader";
 import PlayerRoster from "./PlayerRoster";
 import StatEntryPanel from "./StatEntryPanel";
 import TeamStatsTable from "./TeamStatsTable";
+import SaveStatsAsCSVButton from "./SaveStatsButton";
 
 interface StatKeeperProps {
   homeTeamName: string;
@@ -139,6 +140,14 @@ function StatKeeper({
             team="away"
             teamName={awayTeamName}
             players={awayPlayers}
+          />
+        </div>
+        <div style={{ textAlign: "center", width: "100%" }}>
+          <SaveStatsAsCSVButton
+            homeTeamName={homeTeamName}
+            awayTeamName={awayTeamName}
+            homePlayers={homePlayers}
+            awayPlayers={awayPlayers}
           />
         </div>
       </div>
