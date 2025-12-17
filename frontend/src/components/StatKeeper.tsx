@@ -1,99 +1,121 @@
+import { useState } from "react";
 import type { Player } from "../types";
+import GameHeader from "./GameHeader";
+import PlayerRoster from "./PlayerRoster";
+import StatEntryPanel from "./StatEntryPanel";
+import TeamStatsTable from "./TeamStatsTable";
 
 interface StatKeeperProps {
+  homeTeamName: string;
+  awayTeamName: string;
   homePlayers: Player[];
   setHomePlayers: React.Dispatch<React.SetStateAction<Player[]>>;
   awayPlayers: Player[];
   setAwayPlayers: React.Dispatch<React.SetStateAction<Player[]>>;
+  onEndGame: () => void;
 }
 
-type StatType = "points" | "assists" | "rebounds";
-type TeamType = "home" | "away";
-
 function StatKeeper({
+  homeTeamName,
+  awayTeamName,
   homePlayers,
   setHomePlayers,
   awayPlayers,
   setAwayPlayers,
+  onEndGame,
 }: StatKeeperProps) {
-  const updateStat = (team: TeamType, idx: number, stat: StatType): void => {
+  const [selectedTeam, setSelectedTeam] = useState<"home" | "away">("home");
+  const [selectedPlayerIndex, setSelectedPlayerIndex] = useState<number | null>(
+    null
+  );
+
+  const updateStat = (
+    team: "home" | "away",
+    playerIndex: number,
+    stat: string,
+    delta: number
+  ): void => {
     const setter = team === "home" ? setHomePlayers : setAwayPlayers;
     const players = team === "home" ? homePlayers : awayPlayers;
+
     setter(
-      players.map((p, i) => (i === idx ? { ...p, [stat]: p[stat] + 1 } : p))
+      players.map((p, i) => {
+        if (i === playerIndex) {
+          const newValue = Math.max(0, (p[stat as keyof Player] as number) + delta);
+          return { ...p, [stat]: newValue };
+        }
+        return p;
+      })
     );
   };
 
-  const teamData: Array<{
-    label: string;
-    players: Player[];
-    setPlayers: React.Dispatch<React.SetStateAction<Player[]>>;
-    teamType: TeamType;
-  }> = [
-    {
-      label: "Home",
-      players: homePlayers,
-      setPlayers: setHomePlayers,
-      teamType: "home",
-    },
-    {
-      label: "Away",
-      players: awayPlayers,
-      setPlayers: setAwayPlayers,
-      teamType: "away",
-    },
-  ];
+  const handlePlayerSelect = (team: "home" | "away", index: number) => {
+    setSelectedTeam(team);
+    setSelectedPlayerIndex(index);
+  };
+
+  const selectedPlayer =
+    selectedPlayerIndex !== null
+      ? selectedTeam === "home"
+        ? homePlayers[selectedPlayerIndex]
+        : awayPlayers[selectedPlayerIndex]
+      : null;
 
   return (
-    <div style={{ display: "flex", gap: 40 }}>
-      {teamData.map(({ label, players, teamType }, tIdx) => (
-        <div key={label}>
-          <h3>{label} Team Stats</h3>
-          <table border={1}>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Points</th>
-                <th>Assists</th>
-                <th>Rebounds</th>
-                <th>+Stat</th>
-              </tr>
-            </thead>
-            <tbody>
-              {players.map((p, i) => (
-                <tr key={i}>
-                  <td>{p.number}</td>
-                  <td>{p.name}</td>
-                  <td>{p.points}</td>
-                  <td>{p.assists}</td>
-                  <td>{p.rebounds}</td>
-                  <td>
-                    <button
-                      onClick={() => updateStat(teamType, i, "points")}
-                    >
-                      +P
-                    </button>
-                    <button
-                      onClick={() => updateStat(teamType, i, "assists")}
-                    >
-                      +A
-                    </button>
-                    <button
-                      onClick={() => updateStat(teamType, i, "rebounds")}
-                    >
-                      +R
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+    <div className="stat-keeper-container">
+      <GameHeader
+        homeTeamName={homeTeamName}
+        awayTeamName={awayTeamName}
+        homePlayers={homePlayers}
+        awayPlayers={awayPlayers}
+        onEndGame={onEndGame}
+      />
+
+      <div className="stat-keeper-main">
+        <div className="stat-keeper-top">
+          <PlayerRoster
+            team="home"
+            teamName={homeTeamName}
+            players={homePlayers}
+            selectedPlayerIndex={
+              selectedTeam === "home" ? selectedPlayerIndex : null
+            }
+            onPlayerSelect={(index) => handlePlayerSelect("home", index)}
+          />
+
+          <StatEntryPanel
+            player={selectedPlayer}
+            team={selectedTeam}
+            playerIndex={selectedPlayerIndex}
+            onUpdateStat={updateStat}
+          />
+
+          <PlayerRoster
+            team="away"
+            teamName={awayTeamName}
+            players={awayPlayers}
+            selectedPlayerIndex={
+              selectedTeam === "away" ? selectedPlayerIndex : null
+            }
+            onPlayerSelect={(index) => handlePlayerSelect("away", index)}
+          />
         </div>
-      ))}
+
+        <div className="stat-keeper-bottom">
+          <TeamStatsTable
+            team="home"
+            teamName={homeTeamName}
+            players={homePlayers}
+          />
+          <TeamStatsTable
+            team="away"
+            teamName={awayTeamName}
+            players={awayPlayers}
+          />
+        </div>
+      </div>
     </div>
   );
 }
 
 export default StatKeeper;
-

@@ -46,10 +46,13 @@ function App() {
         </>
       ) : (
         <StatKeeper
+          homeTeamName={homeTeamName}
+          awayTeamName={awayTeamName}
           homePlayers={homePlayers}
           setHomePlayers={setHomePlayers}
           awayPlayers={awayPlayers}
           setAwayPlayers={setAwayPlayers}
+          onEndGame={() => setStarted(false)}
         />
       )}
       {!started && (

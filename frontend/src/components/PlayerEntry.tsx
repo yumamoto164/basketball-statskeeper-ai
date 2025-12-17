@@ -26,7 +26,24 @@ function PlayerEntry({
     if (name && number) {
       setPlayers([
         ...players,
-        { name, number, points: 0, assists: 0, rebounds: 0 },
+        {
+          name,
+          number,
+          points: 0,
+          freeThrowsMade: 0,
+          freeThrowsAttempted: 0,
+          twoPointersMade: 0,
+          twoPointersAttempted: 0,
+          threePointersMade: 0,
+          threePointersAttempted: 0,
+          assists: 0,
+          offensiveRebounds: 0,
+          defensiveRebounds: 0,
+          steals: 0,
+          blocks: 0,
+          turnovers: 0,
+          fouls: 0,
+        },
       ]);
       setName("");
       setNumber("");
@@ -47,9 +64,7 @@ function PlayerEntry({
     if (editName && editNumber && editingIndex !== null) {
       setPlayers(
         players.map((p, i) =>
-          i === editingIndex
-            ? { ...p, name: editName, number: editNumber }
-            : p
+          i === editingIndex ? { ...p, name: editName, number: editNumber } : p
         )
       );
       setEditingIndex(null);
@@ -105,7 +120,8 @@ function PlayerEntry({
 
       <div className="roster-section">
         <label className="section-label">
-          Roster ({players.length} {players.length === 1 ? "player" : "players"})
+          Roster ({players.length} {players.length === 1 ? "player" : "players"}
+          )
         </label>
         <div className="roster-list">
           {players.map((p, i) => (
@@ -166,4 +182,3 @@ function PlayerEntry({
 }
 
 export default PlayerEntry;
-

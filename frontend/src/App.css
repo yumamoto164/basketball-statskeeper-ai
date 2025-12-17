@@ -395,16 +395,479 @@
   }
 }
 
-/* Stat Keeper Styles (for when game starts) */
-table {
-  border-collapse: collapse;
-  margin-top: 1rem;
+/* Stat Keeper Container */
+.stat-keeper-container {
   width: 100%;
+  min-height: 100vh;
+  background-color: #f5f5f5;
 }
 
-th,
-td {
-  padding: 0.4rem 0.7rem;
+.stat-keeper-main {
+  padding: 1rem;
+}
+
+.stat-keeper-top {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.stat-keeper-bottom {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Game Header */
+.game-header {
+  background-color: #374151;
+  color: white;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.game-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  color: white;
+}
+
+.scoreboard {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.scoreboard-team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.scoreboard-separator {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: white;
+  margin: 0 0.5rem;
+}
+
+.team-name {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.team-score {
+  font-size: 2rem;
+  font-weight: 700;
+  color: white;
+}
+
+.end-game-button {
+  background-color: white;
+  color: #1a1a1a;
+  border: none;
+  padding: 0.5rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.end-game-button:hover {
+  background-color: #f3f4f6;
+}
+
+/* Player Roster */
+.player-roster {
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  min-width: 200px;
+  max-width: 250px;
+}
+
+.roster-header {
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: white;
+  font-weight: 500;
+}
+
+.roster-header.home-header {
+  background-color: #2563eb;
+}
+
+.roster-header.away-header {
+  background-color: #dc2626;
+}
+
+.roster-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: white;
+}
+
+.roster-list {
+  padding: 0.5rem;
+}
+
+.roster-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.roster-item:hover {
+  background-color: #f9fafb;
+}
+
+.roster-item.selected {
+  background-color: #e5e7eb;
+}
+
+.player-icon-small {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #374151;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.player-info-small {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  flex: 1;
+}
+
+.player-name-small {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.player-points-small {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* Stat Entry Panel */
+.stat-entry-panel {
+  flex: 1;
+  background-color: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  min-width: 400px;
+}
+
+.no-player-selected {
   text-align: center;
-  border: 1px solid #d1d5db;
+  color: #6b7280;
+  padding: 3rem 1rem;
+  font-size: 1rem;
+}
+
+.selected-player-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.selected-player-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #374151;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.125rem;
+  flex-shrink: 0;
+}
+
+.selected-player-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.selected-player-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.team-label {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.team-label.home-label {
+  background-color: #2563eb;
+  color: white;
+}
+
+.team-label.away-label {
+  background-color: #dc2626;
+  color: white;
+}
+
+.selected-player-points {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* Scoring Stats */
+.scoring-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.scoring-stat-card {
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.scoring-stat-header {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.75rem;
+}
+
+.scoring-stat-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.stat-button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.stat-button:hover {
+  opacity: 0.9;
+}
+
+.made-button {
+  background-color: #10b981;
+  color: white;
+}
+
+.missed-button {
+  background-color: #ef4444;
+  color: white;
+}
+
+.undo-button {
+  background-color: #6b7280;
+  color: white;
+}
+
+/* Other Stats Grid */
+.other-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.stat-card {
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 0.75rem;
+}
+
+.stat-controls {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.stat-increment,
+.stat-decrement {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  border: none;
+  background-color: #374151;
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.stat-increment:hover,
+.stat-decrement:hover {
+  background-color: #1f2937;
+}
+
+/* Team Stats Table */
+.team-stats-table {
+  flex: 1;
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  min-width: 500px;
+}
+
+.stats-table-header {
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: white;
+  font-weight: 500;
+}
+
+.stats-table-header.home-header {
+  background-color: #2563eb;
+}
+
+.stats-table-header.away-header {
+  background-color: #dc2626;
+}
+
+.stats-table-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: white;
+}
+
+.stats-table-container {
+  overflow-x: auto;
+  padding: 1rem;
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.stats-table thead {
+  background-color: #f9fafb;
+}
+
+.stats-table th {
+  padding: 0.5rem;
+  text-align: center;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 2px solid #e5e7eb;
+  font-size: 0.75rem;
+}
+
+.stats-table td {
+  padding: 0.5rem;
+  text-align: center;
+  color: #1a1a1a;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.stats-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+/* Responsive Design for Stat Keeper */
+@media (max-width: 1200px) {
+  .stat-keeper-top {
+    flex-direction: column;
+  }
+
+  .stat-keeper-bottom {
+    flex-direction: column;
+  }
+
+  .player-roster {
+    max-width: 100%;
+  }
+
+  .stat-entry-panel {
+    min-width: 100%;
+  }
+
+  .team-stats-table {
+    min-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .game-header {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .scoreboard {
+    order: 2;
+  }
+
+  .game-title {
+    order: 1;
+  }
+
+  .end-game-button {
+    order: 3;
+    width: 100%;
+  }
+
+  .other-stats-grid {
+    grid-template-columns: 1fr;
+  }
 }
