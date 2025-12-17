@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import type { Player } from "../types";
 
 interface StatEntryPanelProps {
@@ -26,6 +27,35 @@ function StatEntryPanel({
   onUpdateStat,
   onUpdateShot,
 }: StatEntryPanelProps) {
+  // these are the shots that have been made or missed
+  // true represents a made shot, false represents a missed shot
+  // used as a stack to undo shots
+  // Keyed by player identifier (team-playerIndex) to maintain separate stacks per player
+  const shotUpdateStacks = useRef<
+    Map<
+      string,
+      {
+        freeThrow: boolean[];
+        twoPointer: boolean[];
+        threePointer: boolean[];
+      }
+    >
+  >(new Map());
+
+  // Get or create stack for current player
+  const getPlayerStack = () => {
+    if (playerIndex === null) return null;
+    const playerKey = `${team}-${playerIndex}`;
+    if (!shotUpdateStacks.current.has(playerKey)) {
+      shotUpdateStacks.current.set(playerKey, {
+        freeThrow: [],
+        twoPointer: [],
+        threePointer: [],
+      });
+    }
+    return shotUpdateStacks.current.get(playerKey)!;
+  };
+
   if (!player) {
     return (
       <div className="stat-entry-panel">
@@ -48,6 +78,9 @@ function StatEntryPanel({
   ) => {
     if (playerIndex === null) return;
 
+    const playerStack = getPlayerStack();
+    if (!playerStack) return;
+
     const currentShot = player[type];
     const newShot = {
       made: made ? currentShot.made + 1 : currentShot.made,
@@ -58,26 +91,32 @@ function StatEntryPanel({
     const pointsDiff = made ? points : 0;
 
     onUpdateShot(team, playerIndex, type, newShot, pointsDiff);
-
-    // if (made) {
-    //   const points = type === "freeThrow" ? 1 : type === "twoPointer" ? 2 : 3;
-    //   updateStat("points", points);
-    // }
+    playerStack[type].push(made);
   };
 
   const handleUndo = (type: "freeThrow" | "twoPointer" | "threePointer") => {
     if (playerIndex === null) return;
 
+    const playerStack = getPlayerStack();
+    if (!playerStack) return;
+
     const currentShot = player[type];
     if (currentShot.attempted === 0) return;
 
-    const wasMade = currentShot.made > 0;
+    // Pop from the stack to get the last shot's made/missed status
+    if (playerStack[type].length === 0) return;
+
+    const lastShotMade = playerStack[type].pop();
+    if (lastShotMade === undefined) return;
+
     const newShot = {
-      made: Math.max(0, currentShot.made - (wasMade ? 1 : 0)),
+      made: Math.max(0, currentShot.made - (lastShotMade ? 1 : 0)),
       attempted: currentShot.attempted - 1,
     };
+
     const points = type === "freeThrow" ? 1 : type === "twoPointer" ? 2 : 3;
-    const pointsDiff = wasMade ? -points : 0;
+    // If the popped shot was made (true), subtract points; if missed (false), pointsDiff is 0
+    const pointsDiff = lastShotMade ? -points : 0;
 
     onUpdateShot(team, playerIndex, type, newShot, pointsDiff);
   };
@@ -120,6 +159,7 @@ function StatEntryPanel({
             <button
               className="stat-button undo-button"
               onClick={() => handleUndo("freeThrow")}
+              disabled={player.freeThrow.attempted === 0}
             >
               Undo
             </button>
@@ -146,6 +186,7 @@ function StatEntryPanel({
             <button
               className="stat-button undo-button"
               onClick={() => handleUndo("twoPointer")}
+              disabled={player.twoPointer.attempted === 0}
             >
               Undo
             </button>
@@ -173,6 +214,7 @@ function StatEntryPanel({
             <button
               className="stat-button undo-button"
               onClick={() => handleUndo("threePointer")}
+              disabled={player.threePointer.attempted === 0}
             >
               Undo
             </button>

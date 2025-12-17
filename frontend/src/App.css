@@ -699,6 +699,18 @@
   color: white;
 }
 
+.undo-button:disabled {
+  background-color: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.undo-button:disabled:hover {
+  background-color: #d1d5db;
+  opacity: 0.6;
+}
+
 /* Other Stats Grid */
 .other-stats-grid {
   display: grid;
