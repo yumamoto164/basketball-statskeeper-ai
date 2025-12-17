@@ -10,6 +10,13 @@ interface StatEntryPanelProps {
     stat: string,
     value: number
   ) => void;
+  onUpdateShot: (
+    team: "home" | "away",
+    playerIndex: number,
+    shotType: "freeThrow" | "twoPointer" | "threePointer",
+    shotStats: { made: number; attempted: number },
+    pointsDiff: number
+  ) => void;
 }
 
 function StatEntryPanel({
@@ -17,13 +24,12 @@ function StatEntryPanel({
   team,
   playerIndex,
   onUpdateStat,
+  onUpdateShot,
 }: StatEntryPanelProps) {
   if (!player) {
     return (
       <div className="stat-entry-panel">
-        <div className="no-player-selected">
-          Select a player to track stats
-        </div>
+        <div className="no-player-selected">Select a player to track stats</div>
       </div>
     );
   }
@@ -40,22 +46,40 @@ function StatEntryPanel({
     type: "freeThrow" | "twoPointer" | "threePointer",
     made: boolean
   ) => {
-    const statMap = {
-      freeThrow: { made: "freeThrowsMade", attempted: "freeThrowsAttempted" },
-      twoPointer: { made: "twoPointersMade", attempted: "twoPointersAttempted" },
-      threePointer: {
-        made: "threePointersMade",
-        attempted: "threePointersAttempted",
-      },
+    if (playerIndex === null) return;
+
+    const currentShot = player[type];
+    const newShot = {
+      made: made ? currentShot.made + 1 : currentShot.made,
+      attempted: currentShot.attempted + 1,
     };
 
-    const stats = statMap[type];
-    updateStat(stats.attempted, 1);
-    if (made) {
-      updateStat(stats.made, 1);
-      const points = type === "freeThrow" ? 1 : type === "twoPointer" ? 2 : 3;
-      updateStat("points", points);
-    }
+    const points = type === "freeThrow" ? 1 : type === "twoPointer" ? 2 : 3;
+    const pointsDiff = made ? points : 0;
+
+    onUpdateShot(team, playerIndex, type, newShot, pointsDiff);
+
+    // if (made) {
+    //   const points = type === "freeThrow" ? 1 : type === "twoPointer" ? 2 : 3;
+    //   updateStat("points", points);
+    // }
+  };
+
+  const handleUndo = (type: "freeThrow" | "twoPointer" | "threePointer") => {
+    if (playerIndex === null) return;
+
+    const currentShot = player[type];
+    if (currentShot.attempted === 0) return;
+
+    const wasMade = currentShot.made > 0;
+    const newShot = {
+      made: Math.max(0, currentShot.made - (wasMade ? 1 : 0)),
+      attempted: currentShot.attempted - 1,
+    };
+    const points = type === "freeThrow" ? 1 : type === "twoPointer" ? 2 : 3;
+    const pointsDiff = wasMade ? -points : 0;
+
+    onUpdateShot(team, playerIndex, type, newShot, pointsDiff);
   };
 
   return (
@@ -65,7 +89,9 @@ function StatEntryPanel({
         <div className="selected-player-info">
           <div className="selected-player-name">
             {player.name}
-            <span className={`team-label ${isHome ? "home-label" : "away-label"}`}>
+            <span
+              className={`team-label ${isHome ? "home-label" : "away-label"}`}
+            >
               {isHome ? "HOME" : "AWAY"}
             </span>
           </div>
@@ -76,7 +102,7 @@ function StatEntryPanel({
       <div className="scoring-stats">
         <div className="scoring-stat-card">
           <div className="scoring-stat-header">
-            Free Throws {player.freeThrowsMade}/{player.freeThrowsAttempted}
+            Free Throws {player.freeThrow.made}/{player.freeThrow.attempted}
           </div>
           <div className="scoring-stat-buttons">
             <button
@@ -93,15 +119,7 @@ function StatEntryPanel({
             </button>
             <button
               className="stat-button undo-button"
-              onClick={() => {
-                if (player.freeThrowsAttempted > 0) {
-                  updateStat("freeThrowsAttempted", -1);
-                  if (player.freeThrowsMade > 0) {
-                    updateStat("freeThrowsMade", -1);
-                    updateStat("points", -1);
-                  }
-                }
-              }}
+              onClick={() => handleUndo("freeThrow")}
             >
               Undo
             </button>
@@ -110,7 +128,7 @@ function StatEntryPanel({
 
         <div className="scoring-stat-card">
           <div className="scoring-stat-header">
-            2-Pointers {player.twoPointersMade}/{player.twoPointersAttempted}
+            2-Pointers {player.twoPointer.made}/{player.twoPointer.attempted}
           </div>
           <div className="scoring-stat-buttons">
             <button
@@ -127,15 +145,7 @@ function StatEntryPanel({
             </button>
             <button
               className="stat-button undo-button"
-              onClick={() => {
-                if (player.twoPointersAttempted > 0) {
-                  updateStat("twoPointersAttempted", -1);
-                  if (player.twoPointersMade > 0) {
-                    updateStat("twoPointersMade", -1);
-                    updateStat("points", -2);
-                  }
-                }
-              }}
+              onClick={() => handleUndo("twoPointer")}
             >
               Undo
             </button>
@@ -144,7 +154,8 @@ function StatEntryPanel({
 
         <div className="scoring-stat-card">
           <div className="scoring-stat-header">
-            3-Pointers {player.threePointersMade}/{player.threePointersAttempted}
+            3-Pointers {player.threePointer.made}/
+            {player.threePointer.attempted}
           </div>
           <div className="scoring-stat-buttons">
             <button
@@ -161,15 +172,7 @@ function StatEntryPanel({
             </button>
             <button
               className="stat-button undo-button"
-              onClick={() => {
-                if (player.threePointersAttempted > 0) {
-                  updateStat("threePointersAttempted", -1);
-                  if (player.threePointersMade > 0) {
-                    updateStat("threePointersMade", -1);
-                    updateStat("points", -3);
-                  }
-                }
-              }}
+              onClick={() => handleUndo("threePointer")}
             >
               Undo
             </button>
@@ -250,4 +253,3 @@ function StatCard({ label, value, onIncrement, onDecrement }: StatCardProps) {
 }
 
 export default StatEntryPanel;
-

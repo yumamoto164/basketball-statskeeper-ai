@@ -13,21 +13,21 @@ function TeamStatsTable({ team, teamName, players }: TeamStatsTableProps) {
     : "stats-table-header away-header";
 
   const calculateFieldGoals = (player: Player): string => {
-    const made = player.twoPointersMade + player.threePointersMade;
+    const made = player.twoPointer.made + player.threePointer.made;
     const attempted =
-      player.twoPointersAttempted + player.threePointersAttempted;
+      player.twoPointer.attempted + player.threePointer.attempted;
     return attempted > 0 ? `${made}/${attempted}` : "0/0";
   };
 
   const calculateFreeThrows = (player: Player): string => {
-    return player.freeThrowsAttempted > 0
-      ? `${player.freeThrowsMade}/${player.freeThrowsAttempted}`
+    return player.freeThrow.attempted > 0
+      ? `${player.freeThrow.made}/${player.freeThrow.attempted}`
       : "0/0";
   };
 
   const calculateThreePointers = (player: Player): string => {
-    return player.threePointersAttempted > 0
-      ? `${player.threePointersMade}/${player.threePointersAttempted}`
+    return player.threePointer.attempted > 0
+      ? `${player.threePointer.made}/${player.threePointer.attempted}`
       : "0/0";
   };
 

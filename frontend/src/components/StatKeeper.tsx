@@ -41,8 +41,35 @@ function StatKeeper({
     setter(
       players.map((p, i) => {
         if (i === playerIndex) {
-          const newValue = Math.max(0, (p[stat as keyof Player] as number) + delta);
+          const newValue = Math.max(
+            0,
+            (p[stat as keyof Player] as number) + delta
+          );
           return { ...p, [stat]: newValue };
+        }
+        return p;
+      })
+    );
+  };
+
+  const updateShot = (
+    team: "home" | "away",
+    playerIndex: number,
+    shotType: "freeThrow" | "twoPointer" | "threePointer",
+    shotStats: { made: number; attempted: number },
+    pointsDiff: number
+  ): void => {
+    const setter = team === "home" ? setHomePlayers : setAwayPlayers;
+    const players = team === "home" ? homePlayers : awayPlayers;
+
+    setter(
+      players.map((p, i) => {
+        if (i === playerIndex) {
+          return {
+            ...p,
+            [shotType]: shotStats,
+            points: p.points + pointsDiff,
+          };
         }
         return p;
       })
@@ -88,6 +115,7 @@ function StatKeeper({
             team={selectedTeam}
             playerIndex={selectedPlayerIndex}
             onUpdateStat={updateStat}
+            onUpdateShot={updateShot}
           />
 
           <PlayerRoster

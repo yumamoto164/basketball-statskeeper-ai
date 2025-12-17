@@ -1,14 +1,16 @@
+export interface ShotStats {
+  made: number;
+  attempted: number;
+}
+
 export interface Player {
   name: string;
   number: string;
   // Scoring stats
   points: number;
-  freeThrowsMade: number;
-  freeThrowsAttempted: number;
-  twoPointersMade: number;
-  twoPointersAttempted: number;
-  threePointersMade: number;
-  threePointersAttempted: number;
+  freeThrow: ShotStats;
+  twoPointer: ShotStats;
+  threePointer: ShotStats;
   // Other stats
   assists: number;
   offensiveRebounds: number;
@@ -18,4 +20,3 @@ export interface Player {
   turnovers: number;
   fouls: number;
 }
-
