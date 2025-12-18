@@ -1,16 +1,19 @@
+import { useContext } from "react";
+import { StatsContext } from "../App";
 import type { Player } from "../types";
 
 interface TeamStatsTableProps {
   team: "home" | "away";
   teamName: string;
-  players: Player[];
 }
 
-function TeamStatsTable({ team, teamName, players }: TeamStatsTableProps) {
+function TeamStatsTable({ team, teamName }: TeamStatsTableProps) {
   const isHome = team === "home";
   const headerClass = isHome
     ? "stats-table-header home-header"
     : "stats-table-header away-header";
+  const { homePlayers, awayPlayers } = useContext(StatsContext);
+  const players = isHome ? homePlayers : awayPlayers;
 
   const calculateFieldGoals = (player: Player): string => {
     const made = player.twoPointer.made + player.threePointer.made;

@@ -1,13 +1,11 @@
-import { useRef, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import { FaMicrophone } from "react-icons/fa";
-import { Player } from "../types";
 import { statsFromAudioService } from "../utils/statsFromAudioService";
+import { StatsContext } from "../App";
 
 type AudioRecorderProps = {
   awayTeamName: string;
   homeTeamName: string;
-  awayPlayers: Player[];
-  homePlayers: Player[];
   updateShot: (
     team: "home" | "away",
     playerIndex: number,
@@ -26,11 +24,10 @@ type AudioRecorderProps = {
 const AudioRecorder = ({
   awayTeamName,
   homeTeamName,
-  awayPlayers,
-  homePlayers,
   updateShot,
   updateStat,
 }: AudioRecorderProps) => {
+  const { homePlayers, awayPlayers } = useContext(StatsContext);
   const [recording, setRecording] = useState(false);
   const [processing, setProcessing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);

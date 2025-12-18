@@ -1,18 +1,17 @@
 import saveAs from "file-saver";
-import { Player } from "../types";
 import { generateCSV } from "../utils/csvUtils";
+import { StatsContext } from "../App";
+import { useContext } from "react";
 
 function SaveStatsAsCSVButton({
   homeTeamName,
   awayTeamName,
-  homePlayers,
-  awayPlayers,
 }: {
   homeTeamName: string;
   awayTeamName: string;
-  homePlayers: Player[];
-  awayPlayers: Player[];
 }) {
+  const { homePlayers, awayPlayers } = useContext(StatsContext);
+
   const handleSave = () => {
     const homeCSV = generateCSV(homeTeamName, homePlayers);
     const awayCSV = generateCSV(awayTeamName, awayPlayers);

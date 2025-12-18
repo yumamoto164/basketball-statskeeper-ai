@@ -1,9 +1,9 @@
-import type { Player } from "../types";
+import { useContext } from "react";
+import { StatsContext } from "../App";
 
 interface PlayerRosterProps {
   team: "home" | "away";
   teamName: string;
-  players: Player[];
   selectedPlayerIndex: number | null;
   onPlayerSelect: (index: number) => void;
 }
@@ -11,12 +11,16 @@ interface PlayerRosterProps {
 function PlayerRoster({
   team,
   teamName,
-  players,
   selectedPlayerIndex,
   onPlayerSelect,
 }: PlayerRosterProps) {
   const isHome = team === "home";
-  const headerClass = isHome ? "roster-header home-header" : "roster-header away-header";
+  const { homePlayers, awayPlayers } = useContext(StatsContext);
+  const players = isHome ? homePlayers : awayPlayers;
+
+  const headerClass = isHome
+    ? "roster-header home-header"
+    : "roster-header away-header";
 
   return (
     <div className="player-roster">
@@ -46,4 +50,3 @@ function PlayerRoster({
 }
 
 export default PlayerRoster;
-

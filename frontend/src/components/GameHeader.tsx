@@ -1,20 +1,18 @@
-import type { Player } from "../types";
+import { useContext } from "react";
+import { StatsContext } from "../App";
 
 interface GameHeaderProps {
   homeTeamName: string;
   awayTeamName: string;
-  homePlayers: Player[];
-  awayPlayers: Player[];
   onEndGame: () => void;
 }
 
 function GameHeader({
   homeTeamName,
   awayTeamName,
-  homePlayers,
-  awayPlayers,
   onEndGame,
 }: GameHeaderProps) {
+  const { homePlayers, awayPlayers } = useContext(StatsContext);
   const homeScore = homePlayers.reduce((sum, p) => sum + p.points, 0);
   const awayScore = awayPlayers.reduce((sum, p) => sum + p.points, 0);
 
@@ -42,4 +40,3 @@ function GameHeader({
 }
 
 export default GameHeader;
-

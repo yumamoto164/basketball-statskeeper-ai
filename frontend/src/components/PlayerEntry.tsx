@@ -1,26 +1,23 @@
-import { useState } from "react";
-import type { Player } from "../types";
+import { useContext, useState } from "react";
+import { StatsContext } from "../App";
 
 interface PlayerEntryProps {
   team: "Home" | "Away";
-  players: Player[];
-  setPlayers: React.Dispatch<React.SetStateAction<Player[]>>;
   teamName: string;
   setTeamName: React.Dispatch<React.SetStateAction<string>>;
 }
 
-function PlayerEntry({
-  team,
-  players,
-  setPlayers,
-  teamName,
-  setTeamName,
-}: PlayerEntryProps) {
+function PlayerEntry({ team, teamName, setTeamName }: PlayerEntryProps) {
   const [name, setName] = useState<string>("");
   const [number, setNumber] = useState<string>("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editName, setEditName] = useState<string>("");
   const [editNumber, setEditNumber] = useState<string>("");
+  const { homePlayers, setHomePlayers, awayPlayers, setAwayPlayers } =
+    useContext(StatsContext);
+
+  const players = team === "Home" ? homePlayers : awayPlayers;
+  const setPlayers = team === "Home" ? setHomePlayers : setAwayPlayers;
 
   const addPlayer = (): void => {
     if (name && number) {

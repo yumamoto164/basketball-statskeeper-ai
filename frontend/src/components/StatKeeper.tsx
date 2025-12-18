@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import type { Player } from "../types";
 import GameHeader from "./GameHeader";
 import PlayerRoster from "./PlayerRoster";
@@ -6,30 +6,25 @@ import StatEntryPanel from "./StatEntryPanel";
 import TeamStatsTable from "./TeamStatsTable";
 import SaveStatsAsCSVButton from "./SaveStatsButton";
 import AudioRecorder from "./AudioRecorder";
+import { StatsContext } from "../App";
 
 interface StatKeeperProps {
   homeTeamName: string;
   awayTeamName: string;
-  homePlayers: Player[];
-  setHomePlayers: React.Dispatch<React.SetStateAction<Player[]>>;
-  awayPlayers: Player[];
-  setAwayPlayers: React.Dispatch<React.SetStateAction<Player[]>>;
   onEndGame: () => void;
 }
 
 function StatKeeper({
   homeTeamName,
   awayTeamName,
-  homePlayers,
-  setHomePlayers,
-  awayPlayers,
-  setAwayPlayers,
   onEndGame,
 }: StatKeeperProps) {
   const [selectedTeam, setSelectedTeam] = useState<"home" | "away">("home");
   const [selectedPlayerIndex, setSelectedPlayerIndex] = useState<number | null>(
     null
   );
+  const { homePlayers, setHomePlayers, awayPlayers, setAwayPlayers } =
+    useContext(StatsContext);
 
   const updateStat = (
     team: "home" | "away",
@@ -95,8 +90,6 @@ function StatKeeper({
       <GameHeader
         homeTeamName={homeTeamName}
         awayTeamName={awayTeamName}
-        homePlayers={homePlayers}
-        awayPlayers={awayPlayers}
         onEndGame={onEndGame}
       />
 
@@ -105,7 +98,6 @@ function StatKeeper({
           <PlayerRoster
             team="home"
             teamName={homeTeamName}
-            players={homePlayers}
             selectedPlayerIndex={
               selectedTeam === "home" ? selectedPlayerIndex : null
             }
@@ -123,7 +115,6 @@ function StatKeeper({
           <PlayerRoster
             team="away"
             teamName={awayTeamName}
-            players={awayPlayers}
             selectedPlayerIndex={
               selectedTeam === "away" ? selectedPlayerIndex : null
             }
@@ -135,31 +126,19 @@ function StatKeeper({
           <AudioRecorder
             awayTeamName={awayTeamName}
             homeTeamName={homeTeamName}
-            awayPlayers={awayPlayers}
-            homePlayers={homePlayers}
             updateShot={updateShot}
             updateStat={updateStat}
           />
         </div>
 
         <div className="stat-keeper-bottom">
-          <TeamStatsTable
-            team="home"
-            teamName={homeTeamName}
-            players={homePlayers}
-          />
-          <TeamStatsTable
-            team="away"
-            teamName={awayTeamName}
-            players={awayPlayers}
-          />
+          <TeamStatsTable team="home" teamName={homeTeamName} />
+          <TeamStatsTable team="away" teamName={awayTeamName} />
         </div>
         <div style={{ textAlign: "center", width: "100%" }}>
           <SaveStatsAsCSVButton
             homeTeamName={homeTeamName}
             awayTeamName={awayTeamName}
-            homePlayers={homePlayers}
-            awayPlayers={awayPlayers}
           />
         </div>
       </div>
