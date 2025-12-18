@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ValidationError
 from langchain.agents import create_agent, AgentState
 from langchain_openai import ChatOpenAI
@@ -81,6 +82,15 @@ SYSTEM_PROMPT = """
 """
 
 app = FastAPI(title="Basketball Stats Keeper AI", version="1.0.0")
+
+# Configure CORS - allow all origins (no security restrictions)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins
+    allow_credentials=False,  # Must be False when allow_origins=["*"]
+    allow_methods=["*"],  # Allow all methods
+    allow_headers=["*"],  # Allow all headers
+)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
