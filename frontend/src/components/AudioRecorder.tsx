@@ -1,9 +1,38 @@
 import { useRef, useState } from "react";
 import { FaMicrophone } from "react-icons/fa";
+import { Player } from "../types";
+import { statsFromAudioService } from "../utils/statsFromAudioService";
 
-const AudioRecorder = () => {
+type AudioRecorderProps = {
+  awayTeamName: string;
+  homeTeamName: string;
+  awayPlayers: Player[];
+  homePlayers: Player[];
+  updateShot: (
+    team: "home" | "away",
+    playerIndex: number,
+    shotType: "freeThrow" | "twoPointer" | "threePointer",
+    shotStats: { made: number; attempted: number },
+    pointsDiff: number
+  ) => void;
+  updateStat: (
+    team: "home" | "away",
+    playerIndex: number,
+    stat: string,
+    delta: number
+  ) => void;
+};
+
+const AudioRecorder = ({
+  awayTeamName,
+  homeTeamName,
+  awayPlayers,
+  homePlayers,
+  updateShot,
+  updateStat,
+}: AudioRecorderProps) => {
   const [recording, setRecording] = useState(false);
-  const [audioURL, setAudioURL] = useState<string | null>(null);
+  const [processing, setProcessing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
 
@@ -17,20 +46,73 @@ const AudioRecorder = () => {
         audioChunks.current.push(event.data);
       }
     };
-    mediaRecorder.onstop = () => {
+    mediaRecorder.onstop = async () => {
       const audioBlob = new Blob(audioChunks.current, { type: "audio/webm" });
-      setAudioURL(URL.createObjectURL(audioBlob));
-      // Save the audio file automatically when recording stops
-      const a = document.createElement("a");
-      a.style.display = "none";
-      a.href = URL.createObjectURL(audioBlob);
-      a.download = `recording_${Date.now()}.webm`;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(a.href);
-      }, 100);
+
+      // Send audio to backend API for processing
+      setProcessing(true);
+      try {
+        const homeTeamData = {
+          name: homeTeamName,
+          players: homePlayers.map((p) => ({ name: p.name, number: p.number })),
+        };
+        const awayTeamData = {
+          name: awayTeamName,
+          players: awayPlayers.map((p) => ({ name: p.name, number: p.number })),
+        };
+
+        const result = await statsFromAudioService(
+          audioBlob,
+          homeTeamData,
+          awayTeamData
+        );
+
+        if (result) {
+          if (result.category === "shot") {
+            // Get the current player to access their current stats
+            const players = result.team === "home" ? homePlayers : awayPlayers;
+            const player = players[result.playerIndex];
+
+            // Map backend shot type to frontend shot type
+            const shotType = result.shotType as
+              | "freeThrow"
+              | "twoPointer"
+              | "threePointer";
+
+            // Calculate new shot stats
+            const currentShot = player[shotType];
+            const newShot = {
+              made: result.made ? currentShot.made + 1 : currentShot.made,
+              attempted: currentShot.attempted + 1,
+            };
+
+            // Calculate points
+            const points =
+              shotType === "freeThrow" ? 1 : shotType === "twoPointer" ? 2 : 3;
+            const pointsDiff = result.made ? points : 0;
+
+            // Update the shot
+            updateShot(
+              result.team,
+              result.playerIndex,
+              shotType,
+              newShot,
+              pointsDiff
+            );
+          } else if (result.category === "non-shot") {
+            updateStat(
+              result.team,
+              result.playerIndex,
+              result.stat,
+              result.delta
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Error processing audio:", error);
+      } finally {
+        setProcessing(false);
+      }
     };
     mediaRecorder.start();
     setRecording(true);
@@ -43,12 +125,24 @@ const AudioRecorder = () => {
 
   return (
     <div>
-      <button onClick={recording ? stopRecording : startRecording}>
+      <button
+        onClick={recording ? stopRecording : startRecording}
+        disabled={processing}
+      >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          {recording ? "Stop Recording" : "Record By Voice"}
+          {processing
+            ? "Processing..."
+            : recording
+            ? "Stop Recording"
+            : "Record By Voice"}
           <FaMicrophone />
         </div>
       </button>
+      {processing && (
+        <p style={{ fontSize: "12px", color: "#666" }}>
+          Sending audio to AI for analysis...
+        </p>
+      )}
     </div>
   );
 };

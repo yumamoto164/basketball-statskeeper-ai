@@ -132,7 +132,14 @@ function StatKeeper({
         </div>
 
         <div className="audio-recorder-container">
-          <AudioRecorder />
+          <AudioRecorder
+            awayTeamName={awayTeamName}
+            homeTeamName={homeTeamName}
+            awayPlayers={awayPlayers}
+            homePlayers={homePlayers}
+            updateShot={updateShot}
+            updateStat={updateStat}
+          />
         </div>
 
         <div className="stat-keeper-bottom">
