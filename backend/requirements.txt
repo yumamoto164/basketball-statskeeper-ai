@@ -1,9 +1,9 @@
-# Python dependencies for Basketball Stats Keeper AI Backend
-# Add your dependencies here as needed
-
-# Example common dependencies (uncomment as needed):
-# fastapi==0.104.1
-# uvicorn==0.24.0
-# pydantic==2.5.0
-# python-dotenv==1.0.0
-
+langchain
+langgraph
+langchain_openai
+openai
+fastapi
+uvicorn
+pydub
+python-dotenv
+rapidfuzz
