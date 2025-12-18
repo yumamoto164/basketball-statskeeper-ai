@@ -48,7 +48,7 @@ def speech_to_text() -> str:
 def format_shot_data(
     team: Literal['home', 'away'],
     player_index: int,
-    shot_type: Literal['free_throw', 'two_point_shot', 'three_point_shot'],
+    shot_type: Literal["freeThrow", "twoPointer", "threePointer"],
     made: bool,
 ) -> dict:
     """
