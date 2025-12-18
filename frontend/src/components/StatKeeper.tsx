@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import type { Player } from "../types";
 import GameHeader from "./GameHeader";
 import PlayerRoster from "./PlayerRoster";
@@ -13,6 +13,14 @@ interface StatKeeperProps {
   awayTeamName: string;
   onEndGame: () => void;
 }
+export type ShotUpdateStack = Map<
+  string,
+  {
+    freeThrow: boolean[];
+    twoPointer: boolean[];
+    threePointer: boolean[];
+  }
+>;
 
 function StatKeeper({
   homeTeamName,
@@ -25,6 +33,11 @@ function StatKeeper({
   );
   const { homePlayers, setHomePlayers, awayPlayers, setAwayPlayers } =
     useContext(StatsContext);
+  // these are the shots that have been made or missed
+  // true represents a made shot, false represents a missed shot
+  // used as a stack to undo shots
+  // Keyed by player identifier (team-playerIndex) to maintain separate stacks per player
+  const shotUpdateStacks = useRef<ShotUpdateStack>(new Map());
 
   const updateStat = (
     team: "home" | "away",
@@ -110,6 +123,7 @@ function StatKeeper({
             playerIndex={selectedPlayerIndex}
             onUpdateStat={updateStat}
             onUpdateShot={updateShot}
+            shotUpdateStacks={shotUpdateStacks}
           />
 
           <PlayerRoster
@@ -128,6 +142,7 @@ function StatKeeper({
             homeTeamName={homeTeamName}
             updateShot={updateShot}
             updateStat={updateStat}
+            shotUpdateStacks={shotUpdateStacks}
           />
         </div>
 

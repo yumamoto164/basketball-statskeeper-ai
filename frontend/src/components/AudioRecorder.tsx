@@ -2,6 +2,8 @@ import { useContext, useRef, useState } from "react";
 import { FaMicrophone } from "react-icons/fa";
 import { statsFromAudioService } from "../utils/statsFromAudioService";
 import { StatsContext } from "../App";
+import { ShotUpdateStack } from "./StatKeeper";
+import { getPlayerStack } from "../utils/playerStackUtils";
 
 type AudioRecorderProps = {
   awayTeamName: string;
@@ -19,6 +21,7 @@ type AudioRecorderProps = {
     stat: string,
     delta: number
   ) => void;
+  shotUpdateStacks: React.RefObject<ShotUpdateStack>;
 };
 
 const AudioRecorder = ({
@@ -26,6 +29,7 @@ const AudioRecorder = ({
   homeTeamName,
   updateShot,
   updateStat,
+  shotUpdateStacks,
 }: AudioRecorderProps) => {
   const { homePlayers, awayPlayers } = useContext(StatsContext);
   const [recording, setRecording] = useState(false);
@@ -96,6 +100,14 @@ const AudioRecorder = ({
               newShot,
               pointsDiff
             );
+            const playerStack = getPlayerStack(
+              shotUpdateStacks,
+              result.team,
+              result.playerIndex
+            );
+            playerStack[
+              shotType as "freeThrow" | "twoPointer" | "threePointer"
+            ].push(result.made);
           } else if (result.category === "non-shot") {
             updateStat(
               result.team,

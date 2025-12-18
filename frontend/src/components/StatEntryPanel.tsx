@@ -1,5 +1,6 @@
-import { useRef } from "react";
 import type { Player } from "../types";
+import { getPlayerStack } from "../utils/playerStackUtils";
+import { ShotUpdateStack } from "./StatKeeper";
 
 interface StatEntryPanelProps {
   player: Player | null;
@@ -18,6 +19,7 @@ interface StatEntryPanelProps {
     shotStats: { made: number; attempted: number },
     pointsDiff: number
   ) => void;
+  shotUpdateStacks: React.RefObject<ShotUpdateStack>;
 }
 
 function StatEntryPanel({
@@ -26,36 +28,8 @@ function StatEntryPanel({
   playerIndex,
   onUpdateStat,
   onUpdateShot,
+  shotUpdateStacks,
 }: StatEntryPanelProps) {
-  // these are the shots that have been made or missed
-  // true represents a made shot, false represents a missed shot
-  // used as a stack to undo shots
-  // Keyed by player identifier (team-playerIndex) to maintain separate stacks per player
-  const shotUpdateStacks = useRef<
-    Map<
-      string,
-      {
-        freeThrow: boolean[];
-        twoPointer: boolean[];
-        threePointer: boolean[];
-      }
-    >
-  >(new Map());
-
-  // Get or create stack for current player
-  const getPlayerStack = () => {
-    if (playerIndex === null) return null;
-    const playerKey = `${team}-${playerIndex}`;
-    if (!shotUpdateStacks.current.has(playerKey)) {
-      shotUpdateStacks.current.set(playerKey, {
-        freeThrow: [],
-        twoPointer: [],
-        threePointer: [],
-      });
-    }
-    return shotUpdateStacks.current.get(playerKey)!;
-  };
-
   if (!player) {
     return (
       <div className="stat-entry-panel">
@@ -78,8 +52,7 @@ function StatEntryPanel({
   ) => {
     if (playerIndex === null) return;
 
-    const playerStack = getPlayerStack();
-    if (!playerStack) return;
+    const playerStack = getPlayerStack(shotUpdateStacks, team, playerIndex);
 
     const currentShot = player[type];
     const newShot = {
@@ -97,8 +70,7 @@ function StatEntryPanel({
   const handleUndo = (type: "freeThrow" | "twoPointer" | "threePointer") => {
     if (playerIndex === null) return;
 
-    const playerStack = getPlayerStack();
-    if (!playerStack) return;
+    const playerStack = getPlayerStack(shotUpdateStacks, team, playerIndex);
 
     const currentShot = player[type];
     if (currentShot.attempted === 0) return;
