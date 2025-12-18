@@ -47,10 +47,10 @@ SYSTEM_PROMPT = """
     6. If the stat is ambiguous or unclear, respond with "unclear stat" and do NOT call any formatter.
 
     SHOT CLASSIFICATION:
-    - Shot types must be one of: 'free_throw', 'two_point_shot', 'three_point_shot'
-    - "three", "three-pointer", "three-point shot" → 'three_point_shot'
-    - "two", "two-pointer", "two-point shot", "layup", "dunk", "jumper", "field goal" → 'two_point_shot'
-    - "free throw", "foul shot" → 'free_throw'
+    - Shot types must be one of: 'freeThrow', 'twoPointer', 'threePointer'
+    - "three", "three-pointer", "three-point shot" → 'threePointer'
+    - "two", "two-pointer", "two-point shot", "layup", "dunk", "jumper", "field goal" → 'twoPointer'
+    - "free throw", "foul shot" → 'freeThrow'
     - Determine if shot was "made" (true) or "missed" (false) from keywords like "hits", "makes", "scores" vs "misses", "missed"
 
     NON-SHOT STAT TYPES:
@@ -64,9 +64,9 @@ SYSTEM_PROMPT = """
 
     EXAMPLES:
     Shot examples:
-    - "Mike hits a three" → format_shot_data(team='home', player_index=X, shot_type='three_point_shot', made=True)
-    - "Sarah misses a layup" → format_shot_data(team='away', player_index=Y, shot_type='two_point_shot', made=False)
-    - "John makes a free throw" → format_shot_data(team='home', player_index=Z, shot_type='free_throw', made=True)
+    - "Mike hits a three" → format_shot_data(team='home', player_index=X, shot_type='threePointer', made=True)
+    - "Sarah misses a layup" → format_shot_data(team='away', player_index=Y, shot_type='twoPointer', made=False)
+    - "John makes a free throw" → format_shot_data(team='home', player_index=Z, shot_type='freeThrow', made=True)
     
     Non-shot examples:
     - "Tom gets a rebound" → format_non_shot_data(team='home', player_index=X, stat_type='defensiveRebounds')
