@@ -836,6 +836,11 @@
   background-color: #f9fafb;
 }
 
+.audio-recorder-container {
+  margin: 1rem 0;
+  text-align: center;
+}
+
 /* Responsive Design for Stat Keeper */
 @media (max-width: 1200px) {
   .stat-keeper-top {
