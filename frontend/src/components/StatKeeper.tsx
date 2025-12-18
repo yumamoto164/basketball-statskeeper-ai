@@ -5,6 +5,7 @@ import PlayerRoster from "./PlayerRoster";
 import StatEntryPanel from "./StatEntryPanel";
 import TeamStatsTable from "./TeamStatsTable";
 import SaveStatsAsCSVButton from "./SaveStatsButton";
+import AudioRecorder from "./AudioRecorder";
 
 interface StatKeeperProps {
   homeTeamName: string;
@@ -128,6 +129,10 @@ function StatKeeper({
             }
             onPlayerSelect={(index) => handlePlayerSelect("away", index)}
           />
+        </div>
+
+        <div className="audio-recorder-container">
+          <AudioRecorder />
         </div>
 
         <div className="stat-keeper-bottom">
