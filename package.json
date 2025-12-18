@@ -28,6 +28,7 @@
     "file-saver": "^2.0.5"
   },
   "devDependencies": {
-    "@types/file-saver": "^2.0.7"
+    "@types/file-saver": "^2.0.7",
+    "react-icons": "^5.5.0"
   }
 }
