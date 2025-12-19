@@ -51,37 +51,40 @@ export const statsFromAudioService = async (
   };
 
   const backendUrl = "http://localhost:8000";
-  const response = await fetch(`${backendUrl}/stats-from-audio`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(requestBody),
-  });
-
-  const data = await response.json();
-  if (data && data?.response) {
-    if (data.response.category === "shot") {
-      const { category, team, player_index, shot_type, made } = data.response;
-      return {
-        category,
-        team,
-        playerIndex: player_index,
-        shotType: shot_type,
-        made,
-      } as ShotResult;
-    } else if (data.response.category === "non-shot") {
-      const { category, team, player_index, stat, delta } = data.response;
-      return {
-        category,
-        team,
-        playerIndex: player_index,
-        stat,
-        delta,
-      } as NonShotResult;
-    } else if (data.response === "unclear stat") {
-      return undefined;
+  try {
+    const response = await fetch(`${backendUrl}/stats-from-audio`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    });
+    const data = await response.json();
+    if (data && data?.response) {
+      if (data.response.category === "shot") {
+        const { category, team, player_index, shot_type, made } = data.response;
+        return {
+          category,
+          team,
+          playerIndex: player_index,
+          shotType: shot_type,
+          made,
+        } as ShotResult;
+      } else if (data.response.category === "non-shot") {
+        const { category, team, player_index, stat, delta } = data.response;
+        return {
+          category,
+          team,
+          playerIndex: player_index,
+          stat,
+          delta,
+        } as NonShotResult;
+      } else if (data.response === "unclear stat") {
+        return undefined;
+      }
     }
+    return undefined;
+  } catch (error) {
+    throw new Error("Error processing audio: " + error);
   }
-  return undefined;
 };
