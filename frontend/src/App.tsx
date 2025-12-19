@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 import PlayerEntry from "./components/PlayerEntry";
 import StatKeeper from "./components/StatKeeper";
@@ -26,6 +26,21 @@ function App() {
   const [homeTeamName, setHomeTeamName] = useState<string>("");
   const [awayTeamName, setAwayTeamName] = useState<string>("");
   const [started, setStarted] = useState<boolean>(false);
+
+  // Wake up the backend on mount (Render free tier spins down after 15min)
+  useEffect(() => {
+    const apiUrl = import.meta.env.VITE_BACKEND_URL;
+
+    fetch(`${apiUrl}/health`)
+      .then((res) => res.json())
+      .then(() => {
+        console.log("Backend is ready");
+      })
+      .catch(() => {
+        // Backend is waking up, will be ready soon
+        console.error("Backend is not ready");
+      });
+  }, []);
 
   return (
     <StatsContext.Provider
