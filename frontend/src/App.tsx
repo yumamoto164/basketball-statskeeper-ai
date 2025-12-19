@@ -5,6 +5,7 @@ import StatKeeper from "./components/StatKeeper";
 import type { Player } from "./types";
 import { mockAwayPlayers, mockHomePlayers } from "./test/mockData";
 import { createContext } from "react";
+import { Toaster } from "react-hot-toast";
 
 export const StatsContext = createContext<{
   homePlayers: Player[];
@@ -33,6 +34,7 @@ function App() {
     <StatsContext.Provider
       value={{ homePlayers, setHomePlayers, awayPlayers, setAwayPlayers }}
     >
+      <Toaster />
       <div className="App">
         <div className="header-section">
           <h1 className="main-title">Basketball Stats Keeper</h1>

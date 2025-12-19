@@ -79,6 +79,8 @@ export const statsFromAudioService = async (
         stat,
         delta,
       } as NonShotResult;
+    } else if (data.response === "unclear stat") {
+      return undefined;
     }
   }
   return undefined;

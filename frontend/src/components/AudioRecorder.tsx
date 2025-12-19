@@ -4,6 +4,7 @@ import { statsFromAudioService } from "../utils/statsFromAudioService";
 import { StatsContext } from "../App";
 import { ShotUpdateStack } from "./StatKeeper";
 import { getPlayerStack } from "../utils/playerStackUtils";
+import { toast } from "react-hot-toast";
 
 type AudioRecorderProps = {
   awayTeamName: string;
@@ -69,6 +70,7 @@ const AudioRecorder = ({
         );
 
         if (result) {
+          toast.success("Stats recorded from audio");
           if (result.category === "shot") {
             // Get the current player to access their current stats
             const players = result.team === "home" ? homePlayers : awayPlayers;
@@ -116,9 +118,11 @@ const AudioRecorder = ({
               result.delta
             );
           }
+        } else {
+          toast.error("Unable to recognize player or statistic from audio");
         }
       } catch (error) {
-        console.error("Error processing audio:", error);
+        toast.error("Error processing audio");
       } finally {
         setProcessing(false);
       }
