@@ -21,6 +21,8 @@ export type NonShotResult = {
 
 export type StatsFromAudioResult = ShotResult | NonShotResult | undefined;
 
+const apiUrl = import.meta.env.VITE_API_URL;
+
 export const statsFromAudioService = async (
   audio: Blob,
   homeTeamData: RequestTeamData,
@@ -50,9 +52,8 @@ export const statsFromAudioService = async (
     },
   };
 
-  const backendUrl = "http://localhost:8000";
   try {
-    const response = await fetch(`${backendUrl}/stats-from-audio`, {
+    const response = await fetch(`${apiUrl}/stats-from-audio`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
