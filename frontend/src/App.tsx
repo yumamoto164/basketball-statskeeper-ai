@@ -29,7 +29,7 @@ function App() {
 
   // Wake up the backend on mount (Render free tier spins down after 15min)
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_BACKEND_URL;
+    const apiUrl = import.meta.env.VITE_API_URL;
 
     fetch(`${apiUrl}/health`)
       .then((res) => res.json())
