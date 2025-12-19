@@ -33,6 +33,15 @@ function App() {
     >
       <Toaster />
       <div className="App">
+        <a
+          href="mailto:yumamoto164@gmail.com?subject=Basketball Stats Keeper"
+          className="contact-button"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Contact Me
+        </a>
+
         <div className="header-section">
           <h1 className="main-title">Basketball Stats Keeper</h1>
           <p className="subtitle">Set up both team rosters to get started.</p>
