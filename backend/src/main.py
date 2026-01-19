@@ -279,3 +279,8 @@ async def health_check():
         "service": "Basketball Stats Keeper AI",
         "version": "1.0.0"
     }
+
+@app.get("/load-server")
+async def load_server():
+    """Endpoint to wake up the server (Render free tier)."""
+    return {"status": "ok"}

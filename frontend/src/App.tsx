@@ -31,14 +31,14 @@ function App() {
   useEffect(() => {
     const apiUrl = import.meta.env.VITE_API_URL;
 
-    fetch(`${apiUrl}/health`)
+    fetch(`${apiUrl}/load-server`)
       .then((res) => res.json())
       .then(() => {
-        console.log("Backend is ready");
+        console.log("Backend server loaded");
       })
       .catch(() => {
         // Backend is waking up, will be ready soon
-        console.error("Backend is not ready");
+        console.error("Backend is warming up...");
       });
   }, []);
 
