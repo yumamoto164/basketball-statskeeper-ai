@@ -1,6 +1,5 @@
-from typing import Any, Literal, Optional
+from typing import Literal
 from langchain.tools import tool
-from langchain_openai import ChatOpenAI
 from openai import OpenAI
 from rapidfuzz import fuzz, process
 import logging

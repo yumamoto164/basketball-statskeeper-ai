@@ -2,14 +2,13 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ValidationError
-from langchain.agents import create_agent, AgentState
 from langchain_openai import ChatOpenAI
 import os
 import base64
-import json
 import logging
+import time
 from dotenv import load_dotenv
-from typing import List
+from typing import List, Literal, Optional
 from src.tools import speech_to_text, format_shot_data, format_non_shot_data, get_player_index, set_agent_state
 
 load_dotenv()
@@ -24,61 +23,26 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """
-    You are a basketball stats interpretation agent. Your job is to convert audio descriptions of basketball plays into structured stat data.
+EXTRACTION_PROMPT_TEMPLATE = """
+You extract structured basketball stat events from an audio transcript.
+Use only the transcript and team rosters provided below.
 
-    CRITICAL WORKFLOW (follow these steps in order):
-    1. Convert audio to text using speech_to_text() tool (no parameters needed - audio is automatically available).
-    2. From the transcript, identify:
-       - The player's name mentioned in the play
-       - Which team they belong to (home or away)
-       - Use the state's "home_team_data" and "away_team_data" to match player names
-       - Each team data contains a list of players with names and numbers
-       - Match the player name from transcript to players in home_team_data.players or away_team_data.players. There should be only one match.
-    3. Determine the stat type:
-       - Is it a SHOT (made/missed field goal or free throw)?
-       - Or is it a NON-SHOT stat (rebound, assist, steal, block, turnover, foul)?
-    4. Get the player index using get_player_index(player_name, team).
-       - This MUST be called before formatting any stat
-       - Use the player name from step 2 and the team (home/away)
-    5. Call EXACTLY ONE formatter tool:
-       - For shots: use format_shot_data
-       - For non-shots: use format_non_shot_data
-    6. If the stat is ambiguous or unclear, respond with "unclear stat" and do NOT call any formatter.
+Output rules:
+- If the event is unclear/ambiguous OR required fields cannot be confidently determined, set decision="unclear".
+- For decision="shot", provide: player_name, team, shot_type, made.
+- For decision="non_shot", provide: player_name, team, stat_type.
+- Team must be exactly "home" or "away".
+- shot_type must be one of: freeThrow, twoPointer, threePointer
+- stat_type must be one of: assists, offensiveRebounds, defensiveRebounds, steals, blocks, turnovers, fouls
 
-    SHOT CLASSIFICATION:
-    - Shot types must be one of: 'freeThrow', 'twoPointer', 'threePointer'
-    - "three", "three-pointer", "three-point shot" → 'threePointer'
-    - "two", "two-pointer", "two-point shot", "layup", "dunk", "jumper", "field goal" → 'twoPointer'
-    - "free throw", "foul shot" → 'freeThrow'
-    - Determine if shot was "made" (true) or "missed" (false) from keywords like "hits", "makes", "scores" vs "misses", "missed"
+Transcript:
+{transcript}
 
-    NON-SHOT STAT TYPES:
-    - "assist", "assists" → 'assists'
-    - "offensive rebound", "offensive board" → 'offensiveRebounds'
-    - "defensive rebound", "defensive board" → 'defensiveRebounds'
-    - "steal", "steals" → 'steals'
-    - "block", "blocks", "blocked shot" → 'blocks'
-    - "turnover", "turnovers", "loses the ball" → 'turnovers'
-    - "foul", "fouls", "personal foul" → 'fouls'
+Home team roster:
+{home_roster}
 
-    EXAMPLES:
-    Shot examples:
-    - "Mike hits a three" → format_shot_data(team='home', player_index=X, shot_type='threePointer', made=True)
-    - "Sarah misses a layup" → format_shot_data(team='away', player_index=Y, shot_type='twoPointer', made=False)
-    - "John makes a free throw" → format_shot_data(team='home', player_index=Z, shot_type='freeThrow', made=True)
-    
-    Non-shot examples:
-    - "Tom gets a rebound" → format_non_shot_data(team='home', player_index=X, stat_type='defensiveRebounds')
-    - "Lisa with the assist" → format_non_shot_data(team='away', player_index=Y, stat_type='assists')
-    - "Chris steals the ball" → format_non_shot_data(team='home', player_index=Z, stat_type='steals')
-
-    IMPORTANT RULES:
-    - ALWAYS call get_player_index before calling format_shot_data or format_non_shot_data
-    - Use the player_index returned by get_player_index in the formatter tools
-    - If you cannot determine the player, team, or stat type clearly, respond with "unclear stat"
-    - Do NOT guess or make assumptions about ambiguous plays
-    - End immediately after calling a formatter tool or determining the stat is unclear
+Away team roster:
+{away_roster}
 """
 
 app = FastAPI(title="Basketball Stats Keeper AI", version="1.0.0")
@@ -118,10 +82,23 @@ class Request(BaseModel):
     home_team_data: TeamData
     away_team_data: TeamData
 
-class CustomState(AgentState):
-    home_team_data: TeamData = TeamData(team_name="", players=[])
-    away_team_data: TeamData = TeamData(team_name="", players=[])
-    audio_bytes: bytes = b""
+class ParsedEvent(BaseModel):
+    decision: Literal["shot", "non_shot", "unclear"]
+    player_name: Optional[str] = None
+    team: Optional[Literal["home", "away"]] = None
+    shot_type: Optional[Literal["freeThrow", "twoPointer", "threePointer"]] = None
+    made: Optional[bool] = None
+    stat_type: Optional[
+        Literal[
+            "assists",
+            "offensiveRebounds",
+            "defensiveRebounds",
+            "steals",
+            "blocks",
+            "turnovers",
+            "fouls",
+        ]
+    ] = None
 
 @app.post("/stats-from-audio")
 async def stats_from_audio(request: Request):
@@ -134,6 +111,7 @@ async def stats_from_audio(request: Request):
     Returns:
         JSON response with extracted statistics or error message
     """
+    request_start_time = time.perf_counter()
     try:
         # Validate API key
         api_key = os.getenv("OPENAI_API_KEY")
@@ -176,83 +154,131 @@ async def stats_from_audio(request: Request):
                 detail=f"Failed to initialize agent state: {str(e)}"
             )
         
-        # Initialize the model and create agent
+        # Initialize the model for deterministic extraction
         try:
             model = ChatOpenAI(
                 model="gpt-4o-mini",
                 api_key=api_key,
                 temperature=0
             )
-            agent_graph = create_agent(
-                model,
-                [speech_to_text, format_shot_data, format_non_shot_data, get_player_index],
-                system_prompt=SYSTEM_PROMPT,
-                state_schema=CustomState,
-            )
+            extractor = model.with_structured_output(ParsedEvent)
         except Exception as e:
-            logger.error(f"Failed to initialize agent: {str(e)}")
+            logger.error(f"Failed to initialize LLM extractor: {str(e)}")
             raise HTTPException(
                 status_code=500,
-                detail=f"Failed to initialize agent: {str(e)}"
+                detail=f"Failed to initialize LLM extractor: {str(e)}"
             )
         
-        # Invoke the agent
-        logger.info("Processing audio...")
+        # 1) Deterministic first step: speech_to_text
         try:
-            response = agent_graph.invoke(
-                {
-                    "messages": [{"role": "user", "content": "Process the audio file to extract basketball statistics."}],
-                    "home_team_data": request.home_team_data,
-                    "away_team_data": request.away_team_data,
-                    "audio_bytes": audio_bytes,
-                }
+            stt_start = time.perf_counter()
+            stt_result = speech_to_text.invoke({})
+            stt_latency = time.perf_counter() - stt_start
+            logger.info(
+                f"[latency] stage=speech_to_text_end latency_seconds={stt_latency:.3f}"
             )
         except Exception as e:
-            logger.error(f"Agent processing failed: {str(e)}", exc_info=True)
+            logger.error(f"Speech-to-text processing failed: {str(e)}", exc_info=True)
             raise HTTPException(
                 status_code=500,
-                detail=f"Failed to process audio: {str(e)}"
+                detail=f"Failed to transcribe audio: {str(e)}"
             )
-        
-        # Extract response - look for formatter tool output
-        if not response or "messages" not in response or len(response["messages"]) == 0:
-            logger.error("Agent returned empty response")
+
+        transcript = stt_result.get("transcript") if isinstance(stt_result, dict) else None
+        if not transcript:
             raise HTTPException(
                 status_code=500,
-                detail="Agent returned empty response"
+                detail="Speech-to-text returned empty transcript"
             )
-        
-        formatter_tools = ["format_shot_data", "format_non_shot_data"]
-        tool_result = None
-        
-        # Search messages in reverse for the last formatter tool result
-        for message in reversed(response["messages"]):
-            # Check if message has tool name attribute
-            tool_name = getattr(message, 'name', None)
-            
-            if tool_name in formatter_tools:
-                # Extract content
-                content = getattr(message, 'content', None)
-                
-                if content:
-                    # If content is already a dict, use it
-                    if isinstance(content, dict):
-                        tool_result = content
-                        break
-                    # If content is a string, try to parse as JSON
-                    elif isinstance(content, str):
-                        try:
-                            tool_result = json.loads(content)
-                            break
-                        except json.JSONDecodeError:
-                            continue
-        
-        # Return tool result or fallback to last message
-        if tool_result:
-            return {"response": tool_result}
-        else:
-            last_message = response["messages"][-1]
-            return {"response": getattr(last_message, 'content', str(last_message))}
+
+        # 2) Deterministic middle step: one structured LLM extraction call
+        try:
+            llm_extract_start = time.perf_counter()
+            home_roster = ", ".join([p.name for p in request.home_team_data.players])
+            away_roster = ", ".join([p.name for p in request.away_team_data.players])
+            extraction_prompt = EXTRACTION_PROMPT_TEMPLATE.format(
+                transcript=transcript,
+                home_roster=home_roster,
+                away_roster=away_roster,
+            )
+            parsed_event = extractor.invoke(extraction_prompt)
+            llm_extract_latency = time.perf_counter() - llm_extract_start
+            logger.info(
+                f"[latency] agent_iteration_end iteration=1 latency_seconds={llm_extract_latency:.3f}"
+            )
+        except Exception as e:
+            logger.error(
+                f"[latency] agent_iteration_error iteration=1 error={str(e)}"
+            )
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to extract stat event from transcript: {str(e)}"
+            )
+
+        if parsed_event.decision == "unclear" or not parsed_event.player_name or not parsed_event.team:
+            total_request_latency = time.perf_counter() - request_start_time
+            logger.info(
+                f"[latency] request_end latency_seconds={total_request_latency:.3f}"
+            )
+            return {"response": "unclear stat"}
+
+        # 3) Deterministic player resolution
+        try:
+            player_lookup = get_player_index.invoke(
+                {"player_name": parsed_event.player_name, "team": parsed_event.team}
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to resolve player index: {str(e)}"
+            )
+
+        if not isinstance(player_lookup, dict) or "player_index" not in player_lookup:
+            total_request_latency = time.perf_counter() - request_start_time
+            logger.info(
+                f"[latency] request_end latency_seconds={total_request_latency:.3f}"
+            )
+            return {"response": "unclear stat"}
+
+        player_index = int(player_lookup["player_index"])
+
+        # 4) Deterministic final step: exactly one formatter tool
+        try:
+            if parsed_event.decision == "shot":
+                if parsed_event.shot_type is None or parsed_event.made is None:
+                    formatted = "unclear stat"
+                else:
+                    formatted = format_shot_data.invoke(
+                        {
+                            "team": parsed_event.team,
+                            "player_index": player_index,
+                            "shot_type": parsed_event.shot_type,
+                            "made": parsed_event.made,
+                        }
+                    )
+            else:
+                if parsed_event.stat_type is None:
+                    formatted = "unclear stat"
+                else:
+                    formatted = format_non_shot_data.invoke(
+                        {
+                            "team": parsed_event.team,
+                            "player_index": player_index,
+                            "stat_type": parsed_event.stat_type,
+                            "delta": 1,
+                        }
+                    )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to format stat response: {str(e)}"
+            )
+
+        total_request_latency = time.perf_counter() - request_start_time
+        logger.info(
+            f"[latency] request_end latency_seconds={total_request_latency:.3f}"
+        )
+        return {"response": formatted}
         
     except HTTPException:
         # Re-raise HTTP exceptions (they're already properly formatted)
