@@ -1,10 +1,15 @@
 import { useContext, useRef, useState } from "react";
 import { FaMicrophone } from "react-icons/fa";
-import { statsFromAudioService } from "../utils/statsFromAudioService";
+import {
+  statsFromAudioService,
+  type StatsFromAudioProgressEvent,
+} from "../utils/statsFromAudioService";
 import { StatsContext } from "../App";
 import { ShotUpdateStack } from "./StatKeeper";
 import { getPlayerStack } from "../utils/playerStackUtils";
 import { toast } from "react-hot-toast";
+import { LuSparkles } from "react-icons/lu";
+import { Tooltip } from "@mui/material";
 
 type AudioRecorderProps = {
   awayTeamName: string;
@@ -14,16 +19,19 @@ type AudioRecorderProps = {
     playerIndex: number,
     shotType: "freeThrow" | "twoPointer" | "threePointer",
     shotStats: { made: number; attempted: number },
-    pointsDiff: number
+    pointsDiff: number,
   ) => void;
   updateStat: (
     team: "home" | "away",
     playerIndex: number,
     stat: string,
-    delta: number
+    delta: number,
   ) => void;
   shotUpdateStacks: React.RefObject<ShotUpdateStack>;
 };
+
+const TOOL_TIP_TEXT =
+  "Speak the player name and stat and our AI will record it automatically.";
 
 const AudioRecorder = ({
   awayTeamName,
@@ -35,6 +43,9 @@ const AudioRecorder = ({
   const { homePlayers, awayPlayers } = useContext(StatsContext);
   const [recording, setRecording] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [processingMessage, setProcessingMessage] = useState(
+    "Sending audio to AI for analysis...",
+  );
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
 
@@ -53,6 +64,7 @@ const AudioRecorder = ({
 
       // Send audio to backend API for processing
       setProcessing(true);
+      setProcessingMessage("Uploading audio...");
       try {
         const homeTeamData = {
           name: homeTeamName,
@@ -66,7 +78,17 @@ const AudioRecorder = ({
         const result = await statsFromAudioService(
           audioBlob,
           homeTeamData,
-          awayTeamData
+          awayTeamData,
+          (event: StatsFromAudioProgressEvent) => {
+            if (event.stage === "transcribed" && event.transcript) {
+              setProcessingMessage(`Transcribed: ${event.transcript}`);
+              return;
+            }
+            if (event.type === "result") {
+              setProcessingMessage("Finished processing audio");
+              return;
+            }
+          },
         );
 
         if (result) {
@@ -100,12 +122,12 @@ const AudioRecorder = ({
               result.playerIndex,
               shotType,
               newShot,
-              pointsDiff
+              pointsDiff,
             );
             const playerStack = getPlayerStack(
               shotUpdateStacks,
               result.team,
-              result.playerIndex
+              result.playerIndex,
             );
             playerStack[
               shotType as "freeThrow" | "twoPointer" | "threePointer"
@@ -115,7 +137,7 @@ const AudioRecorder = ({
               result.team,
               result.playerIndex,
               result.stat,
-              result.delta
+              result.delta,
             );
           }
         } else {
@@ -125,6 +147,7 @@ const AudioRecorder = ({
         toast.error("Error processing audio");
       } finally {
         setProcessing(false);
+        setProcessingMessage("Sending audio to AI for analysis...");
       }
     };
     mediaRecorder.start();
@@ -138,23 +161,26 @@ const AudioRecorder = ({
 
   return (
     <div>
-      <button
-        onClick={recording ? stopRecording : startRecording}
-        disabled={processing}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          {processing
-            ? "Processing..."
-            : recording
-            ? "Stop Recording"
-            : "Record By Voice"}
-          <FaMicrophone />
-        </div>
-      </button>
+      <Tooltip title={TOOL_TIP_TEXT} arrow placement="top">
+        <span>
+          <button
+            onClick={recording ? stopRecording : startRecording}
+            disabled={processing}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <LuSparkles />
+              {processing
+                ? "Processing..."
+                : recording
+                  ? "Stop Recording"
+                  : "Auto-Record By Voice"}
+              <FaMicrophone />
+            </div>
+          </button>
+        </span>
+      </Tooltip>
       {processing && (
-        <p style={{ fontSize: "12px", color: "#666" }}>
-          Sending audio to AI for analysis...
-        </p>
+        <p style={{ fontSize: "12px", color: "#666" }}>{processingMessage}</p>
       )}
     </div>
   );

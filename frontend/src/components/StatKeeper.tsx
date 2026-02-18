@@ -29,7 +29,7 @@ function StatKeeper({
 }: StatKeeperProps) {
   const [selectedTeam, setSelectedTeam] = useState<"home" | "away">("home");
   const [selectedPlayerIndex, setSelectedPlayerIndex] = useState<number | null>(
-    null
+    null,
   );
   const { homePlayers, setHomePlayers, awayPlayers, setAwayPlayers } =
     useContext(StatsContext);
@@ -43,7 +43,7 @@ function StatKeeper({
     team: "home" | "away",
     playerIndex: number,
     stat: string,
-    delta: number
+    delta: number,
   ): void => {
     const setter = team === "home" ? setHomePlayers : setAwayPlayers;
     const players = team === "home" ? homePlayers : awayPlayers;
@@ -53,12 +53,12 @@ function StatKeeper({
         if (i === playerIndex) {
           const newValue = Math.max(
             0,
-            (p[stat as keyof Player] as number) + delta
+            (p[stat as keyof Player] as number) + delta,
           );
           return { ...p, [stat]: newValue };
         }
         return p;
-      })
+      }),
     );
   };
 
@@ -67,7 +67,7 @@ function StatKeeper({
     playerIndex: number,
     shotType: "freeThrow" | "twoPointer" | "threePointer",
     shotStats: { made: number; attempted: number },
-    pointsDiff: number
+    pointsDiff: number,
   ): void => {
     const setter = team === "home" ? setHomePlayers : setAwayPlayers;
     const players = team === "home" ? homePlayers : awayPlayers;
@@ -82,7 +82,7 @@ function StatKeeper({
           };
         }
         return p;
-      })
+      }),
     );
   };
 
@@ -107,6 +107,15 @@ function StatKeeper({
       />
 
       <div className="stat-keeper-main">
+        <div className="audio-recorder-container">
+          <AudioRecorder
+            awayTeamName={awayTeamName}
+            homeTeamName={homeTeamName}
+            updateShot={updateShot}
+            updateStat={updateStat}
+            shotUpdateStacks={shotUpdateStacks}
+          />
+        </div>
         <div className="stat-keeper-top">
           <PlayerRoster
             team="home"
@@ -133,16 +142,6 @@ function StatKeeper({
               selectedTeam === "away" ? selectedPlayerIndex : null
             }
             onPlayerSelect={(index) => handlePlayerSelect("away", index)}
-          />
-        </div>
-
-        <div className="audio-recorder-container">
-          <AudioRecorder
-            awayTeamName={awayTeamName}
-            homeTeamName={homeTeamName}
-            updateShot={updateShot}
-            updateStat={updateStat}
-            shotUpdateStacks={shotUpdateStacks}
           />
         </div>
 
