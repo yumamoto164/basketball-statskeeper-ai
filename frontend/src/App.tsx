@@ -4,7 +4,6 @@ import PlayerEntry from "./components/PlayerEntry";
 import StatKeeper from "./components/StatKeeper";
 import type { Player } from "./types";
 import { createContext } from "react";
-import { Toaster } from "react-hot-toast";
 import { mockHomePlayers, mockAwayPlayers } from "./test/mockData";
 
 export const StatsContext = createContext<{
@@ -18,7 +17,7 @@ export const StatsContext = createContext<{
     awayPlayers: Player[];
     setHomePlayers: React.Dispatch<React.SetStateAction<Player[]>>;
     setAwayPlayers: React.Dispatch<React.SetStateAction<Player[]>>;
-  }
+  },
 );
 
 function App() {
@@ -26,7 +25,7 @@ function App() {
   const [awayPlayers, setAwayPlayers] = useState<Player[]>(mockAwayPlayers);
   const [homeTeamName, setHomeTeamName] = useState<string>("La Lakers");
   const [awayTeamName, setAwayTeamName] = useState<string>(
-    "Golden State Warriors"
+    "Golden State Warriors",
   );
   const [started, setStarted] = useState<boolean>(false);
 
@@ -49,7 +48,6 @@ function App() {
     <StatsContext.Provider
       value={{ homePlayers, setHomePlayers, awayPlayers, setAwayPlayers }}
     >
-      <Toaster />
       <div className="App">
         <a
           href="mailto:yumamoto164@gmail.com?subject=Basketball Stats Keeper"
