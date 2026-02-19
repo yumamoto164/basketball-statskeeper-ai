@@ -4,7 +4,6 @@ import PlayerEntry from "./components/PlayerEntry";
 import StatKeeper from "./components/StatKeeper";
 import type { Player } from "./types";
 import { createContext } from "react";
-import { mockHomePlayers, mockAwayPlayers } from "./test/mockData";
 
 export const StatsContext = createContext<{
   homePlayers: Player[];
@@ -21,12 +20,10 @@ export const StatsContext = createContext<{
 );
 
 function App() {
-  const [homePlayers, setHomePlayers] = useState<Player[]>(mockHomePlayers);
-  const [awayPlayers, setAwayPlayers] = useState<Player[]>(mockAwayPlayers);
-  const [homeTeamName, setHomeTeamName] = useState<string>("La Lakers");
-  const [awayTeamName, setAwayTeamName] = useState<string>(
-    "Golden State Warriors",
-  );
+  const [homePlayers, setHomePlayers] = useState<Player[]>([]);
+  const [awayPlayers, setAwayPlayers] = useState<Player[]>([]);
+  const [homeTeamName, setHomeTeamName] = useState<string>("");
+  const [awayTeamName, setAwayTeamName] = useState<string>("");
   const [started, setStarted] = useState<boolean>(false);
 
   // Wake up the backend on mount (Render free tier spins down after 15min)
