@@ -110,7 +110,7 @@ async def stats_from_audio(request: Request):
                 api_key=api_key,
                 temperature=0
             )
-            extractor = model.with_structured_output(ParsedEvent)
+            extractor = model.with_structured_output(ParsedEvent.model_json_schema())
         except Exception as e:
             logger.error(f"Failed to initialize LLM extractor: {str(e)}")
             raise HTTPException(
@@ -166,7 +166,7 @@ async def stats_from_audio(request: Request):
                 away_team_name=request.away_team_data.team_name,
                 shared_numbers_note=shared_numbers_note,
             )
-            parsed_event = extractor.invoke(extraction_prompt)
+            parsed_event = ParsedEvent.model_validate(extractor.invoke(extraction_prompt))
             llm_extract_latency = time.perf_counter() - llm_extract_start
             logger.info(
                 f"[latency] agent_iteration_end iteration=1 latency_seconds={llm_extract_latency:.3f}"
@@ -311,7 +311,7 @@ async def stats_from_audio_stream(request: Request):
             )
 
             model = ChatOpenAI(model="gpt-4o-mini", api_key=api_key, temperature=0)
-            extractor = model.with_structured_output(ParsedEvent)
+            extractor = model.with_structured_output(ParsedEvent.model_json_schema())
 
             yield _encode_sse(
                 {"type": "progress", "stage": "transcribing", "message": "Transcribing audio"},
@@ -365,7 +365,7 @@ async def stats_from_audio_stream(request: Request):
                 away_team_name=request.away_team_data.team_name,
                 shared_numbers_note=shared_numbers_note,
             )
-            parsed_event = extractor.invoke(extraction_prompt)
+            parsed_event = ParsedEvent.model_validate(extractor.invoke(extraction_prompt))
             llm_extract_latency = time.perf_counter() - llm_extract_start
             logger.info(f"[latency] stream_agent_iteration_end iteration=1 latency_seconds={llm_extract_latency:.3f}")
 

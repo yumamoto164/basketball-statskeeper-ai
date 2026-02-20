@@ -13,6 +13,6 @@ def _normalize_api_response(raw_response: Any):
             return raw_response
         if raw_response.get("category") == "non-shot":
             return raw_response
-    if raw_response == "unclear stat":
-        return "unclear stat"
+    if raw_response in ("unclear stat", "unclear which team"):
+        return raw_response
     return "unclear stat"
