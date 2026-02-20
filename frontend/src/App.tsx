@@ -57,7 +57,12 @@ function App() {
 
         <div className="header-section">
           <h1 className="main-title">Basketball Stats Keeper</h1>
-          <p className="subtitle">Set up both team rosters to get started.</p>
+          <span className="ai-badge">✦ AI-Powered</span>
+          <p className="subtitle">
+            {started
+              ? "Record basketball stats by voice with our AI"
+              : "Set up both team rosters to get started"}
+          </p>
         </div>
 
         {!started ? (

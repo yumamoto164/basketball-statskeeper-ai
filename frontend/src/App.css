@@ -1,6 +1,11 @@
 /* Basketball Stats Keeper App Styles */
 .App {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
     sans-serif;
   max-width: 1200px;
   margin: 0 auto;
@@ -54,6 +59,18 @@
   font-size: 1rem;
   color: #666;
   margin: 0;
+}
+
+.ai-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+  color: white;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.75rem;
 }
 
 /* Teams Container */
