@@ -143,12 +143,28 @@ async def stats_from_audio(request: Request):
         # 2) Deterministic middle step: one structured LLM extraction call
         try:
             llm_extract_start = time.perf_counter()
-            home_roster = ", ".join([p.name for p in request.home_team_data.players])
-            away_roster = ", ".join([p.name for p in request.away_team_data.players])
+            home_roster = ", ".join([f"{p.name} (#{p.number})" for p in request.home_team_data.players])
+            away_roster = ", ".join([f"{p.name} (#{p.number})" for p in request.away_team_data.players])
+            home_numbers = {p.number for p in request.home_team_data.players}
+            away_numbers = {p.number for p in request.away_team_data.players}
+            shared_numbers = home_numbers & away_numbers
+            if shared_numbers:
+                shared_numbers_note = (
+                    f"- Jersey numbers {sorted(shared_numbers)} appear on both teams. "
+                    "If a player is identified only by one of these numbers and the team "
+                    "cannot be clearly determined from the transcript (e.g. no team name "
+                    "or home/away mentioned), set decision=\"unclear\"."
+                )
+            else:
+                shared_numbers_note = ""
+                
             extraction_prompt = EXTRACTION_PROMPT_TEMPLATE.format(
                 transcript=transcript,
                 home_roster=home_roster,
                 away_roster=away_roster,
+                home_team_name=request.home_team_data.team_name,
+                away_team_name=request.away_team_data.team_name,
+                shared_numbers_note=shared_numbers_note,
             )
             parsed_event = extractor.invoke(extraction_prompt)
             llm_extract_latency = time.perf_counter() - llm_extract_start
@@ -164,7 +180,20 @@ async def stats_from_audio(request: Request):
                 detail=f"Failed to extract stat event from transcript: {str(e)}"
             )
 
-        if parsed_event.decision == "unclear" or not parsed_event.player_name or not parsed_event.team:
+        # Deterministic guard: shared jersey number with no team context in transcript → unclear
+        if parsed_event.player_number and parsed_event.player_number in shared_numbers:
+            transcript_lower = transcript.lower()
+            team_context_present = (
+                request.home_team_data.team_name.lower() in transcript_lower
+                or request.away_team_data.team_name.lower() in transcript_lower
+                or "home" in transcript_lower
+                or "away" in transcript_lower
+            )
+            if not team_context_present:
+                logger.info("Ambiguous jersey number with no team context → unclear team")
+                return {"response": "unclear which team"}
+
+        if parsed_event.decision == "unclear" or (not parsed_event.player_name and not parsed_event.player_number) or not parsed_event.team:
             total_request_latency = time.perf_counter() - request_start_time
             logger.info(
                 f"[latency] request_end latency_seconds={total_request_latency:.3f}"
@@ -174,7 +203,7 @@ async def stats_from_audio(request: Request):
         # 3) Deterministic player resolution
         try:
             player_lookup = get_player_index.invoke(
-                {"player_name": parsed_event.player_name, "team": parsed_event.team}
+                {"player_name": parsed_event.player_name, "player_number": parsed_event.player_number, "team": parsed_event.team}
             )
         except Exception as e:
             raise HTTPException(
@@ -314,16 +343,49 @@ async def stats_from_audio_stream(request: Request):
             )
 
             llm_extract_start = time.perf_counter()
-            home_roster = ", ".join([p.name for p in request.home_team_data.players])
-            away_roster = ", ".join([p.name for p in request.away_team_data.players])
+            home_roster = ", ".join([f"{p.name} (#{p.number})" for p in request.home_team_data.players])
+            away_roster = ", ".join([f"{p.name} (#{p.number})" for p in request.away_team_data.players])
+            home_numbers = {p.number for p in request.home_team_data.players}
+            away_numbers = {p.number for p in request.away_team_data.players}
+            shared_numbers = home_numbers & away_numbers
+            if shared_numbers:
+                shared_numbers_note = (
+                    f"- Jersey numbers {sorted(shared_numbers)} appear on both teams. "
+                    "If a player is identified only by one of these numbers and the team "
+                    "cannot be clearly determined from the transcript (e.g. no team name "
+                    "or home/away mentioned), set decision=\"unclear\"."
+                )
+            else:
+                shared_numbers_note = ""
             extraction_prompt = EXTRACTION_PROMPT_TEMPLATE.format(
-                transcript=transcript, home_roster=home_roster, away_roster=away_roster
+                transcript=transcript,
+                home_roster=home_roster,
+                away_roster=away_roster,
+                home_team_name=request.home_team_data.team_name,
+                away_team_name=request.away_team_data.team_name,
+                shared_numbers_note=shared_numbers_note,
             )
             parsed_event = extractor.invoke(extraction_prompt)
             llm_extract_latency = time.perf_counter() - llm_extract_start
             logger.info(f"[latency] stream_agent_iteration_end iteration=1 latency_seconds={llm_extract_latency:.3f}")
 
-            if parsed_event.decision == "unclear" or not parsed_event.player_name or not parsed_event.team:
+            # Deterministic guard: shared jersey number with no team context in transcript → unclear
+            if parsed_event.player_number and parsed_event.player_number in shared_numbers:
+                transcript_lower = transcript.lower()
+                team_context_present = (
+                    request.home_team_data.team_name.lower() in transcript_lower
+                    or request.away_team_data.team_name.lower() in transcript_lower
+                    or "home" in transcript_lower
+                    or "away" in transcript_lower
+                )
+                if not team_context_present:
+                    logger.info("Ambiguous jersey number with no team context → unclear team")
+                    total_request_latency = time.perf_counter() - request_start_time
+                    logger.info(f"[latency] stream_request_end latency_seconds={total_request_latency:.3f}")
+                    yield _encode_sse({"type": "result", "response": "unclear which team"}, event="result")
+                    return
+
+            if parsed_event.decision == "unclear" or (not parsed_event.player_name and not parsed_event.player_number) or not parsed_event.team:
                 total_request_latency = time.perf_counter() - request_start_time
                 logger.info(f"[latency] stream_request_end latency_seconds={total_request_latency:.3f}")
                 yield _encode_sse(
@@ -338,7 +400,7 @@ async def stats_from_audio_stream(request: Request):
             )
 
             player_lookup = get_player_index.invoke(
-                {"player_name": parsed_event.player_name, "team": parsed_event.team}
+                {"player_name": parsed_event.player_name, "player_number": parsed_event.player_number, "team": parsed_event.team}
             )
             if not isinstance(player_lookup, dict) or "player_index" not in player_lookup:
                 total_request_latency = time.perf_counter() - request_start_time

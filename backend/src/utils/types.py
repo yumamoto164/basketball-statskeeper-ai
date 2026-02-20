@@ -17,6 +17,7 @@ class Request(BaseModel):
 class ParsedEvent(BaseModel):
     decision: Literal["shot", "non_shot", "unclear"]
     player_name: Optional[str] = None
+    player_number: Optional[str] = None  # jersey number, e.g. "10", when mentioned instead of name
     team: Optional[Literal["home", "away"]] = None
     shot_type: Optional[Literal["freeThrow", "twoPointer", "threePointer"]] = None
     made: Optional[bool] = None

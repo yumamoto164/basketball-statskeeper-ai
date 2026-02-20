@@ -138,7 +138,7 @@ export const AudioRecorderModal = ({
           },
         );
 
-        if (apiResult) {
+        if (apiResult && "category" in apiResult) {
           if (apiResult.category === "shot") {
             const players =
               apiResult.team === "home" ? homePlayers : awayPlayers;
@@ -189,6 +189,16 @@ export const AudioRecorderModal = ({
               message: `${apiResult.stat.charAt(0).toUpperCase() + apiResult.stat.slice(1)} — ${player.name}`,
             });
           }
+        } else if (
+          apiResult &&
+          "error" in apiResult &&
+          apiResult.error === "unclear which team"
+        ) {
+          setResult({
+            status: "error",
+            message:
+              "Couldn't determine which team — please mention the team name",
+          });
         } else {
           setResult({
             status: "error",

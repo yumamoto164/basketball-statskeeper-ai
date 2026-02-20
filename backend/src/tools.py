@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 from langchain.tools import tool
 from openai import OpenAI
 from rapidfuzz import fuzz, process
@@ -98,72 +98,78 @@ def set_agent_state(state: dict):
 
 @tool
 def get_player_index(
-    player_name: str, 
-    team: Literal['home', 'away']
+    team: Literal['home', 'away'],
+    player_name: Optional[str] = None,
+    player_number: Optional[str] = None,
 ) -> dict:
     """
-    Get the index of a player on a team using fuzzy matching. This should be called before calling the format_non_shot_data and format_shot_data tools.
-    
-    Uses the state's home_team_data and away_team_data to find the player.
-    
+    Get the index of a player on a team. Matches by jersey number first (exact), then falls
+    back to fuzzy name matching. This should be called before format_non_shot_data / format_shot_data.
+
     Args:
-        player_name: The name of the player to find (can be partial or approximate)
         team: Either 'home' or 'away' to specify which team to search
-    
+        player_name: The name of the player (can be partial or approximate)
+        player_number: The jersey number as a digit string, e.g. "10"
+
     Returns:
         dict: Dictionary containing the player_index (0-based) of the matched player
     """
     try:
         global _agent_state
-        
-        # Get team data from state
+
         team_data_key = 'home_team_data' if team == 'home' else 'away_team_data'
         team_data = _agent_state.get(team_data_key)
-        
+
         if not team_data:
             raise ValueError(f"{team}_team_data not found in state. Make sure state is set.")
-        
-        # Handle both dict and Pydantic model formats
+
         if hasattr(team_data, 'players'):
             players = team_data.players
         elif isinstance(team_data, dict):
             players = team_data.get('players', [])
         else:
             raise ValueError(f"Invalid format for {team}_team_data.")
-        
+
         if not players:
             raise ValueError(f"No players found in {team}_team_data.")
-        
-        # Create a list of player names for fuzzy matching
-        player_names = []
-        for player in players:
-            if hasattr(player, 'name'):
-                player_names.append(player.name)
-            elif isinstance(player, dict):
-                player_names.append(player.get('name', ''))
-            else:
-                player_names.append(str(player))
-        
-        # Use fuzzy matching to find the best match
-        result = process.extractOne(
-            player_name,
-            player_names,
-            scorer=fuzz.WRatio,
-            score_cutoff=60
-        )
-        
-        if not result:
-            logger.warning(f"Player '{player_name}' not found in {team} team")
-            return (f"Could not find matching player for '{player_name}' in {team} team")
-        
-        matched_name, score, index = result
-        logger.info(f"Matched '{player_name}' → '{matched_name}' (index: {index})")
-        
-        return {
-            "player_index": index,
-            "matched_name": matched_name,
-            "confidence_score": score
-        }
+
+        # 1) Jersey number exact match (highest priority)
+        if player_number is not None:
+            for i, player in enumerate(players):
+                number = player.number if hasattr(player, 'number') else player.get('number', '')
+                if number == player_number:
+                    name = player.name if hasattr(player, 'name') else player.get('name', '')
+                    logger.info(f"Matched jersey #{player_number} → '{name}' (index: {i})")
+                    return {"player_index": i, "matched_name": name, "confidence_score": 100}
+            logger.warning(f"Jersey #{player_number} not found in {team} team")
+
+        # 2) Fuzzy name match fallback
+        if player_name is not None:
+            player_names = []
+            for player in players:
+                if hasattr(player, 'name'):
+                    player_names.append(player.name)
+                elif isinstance(player, dict):
+                    player_names.append(player.get('name', ''))
+                else:
+                    player_names.append(str(player))
+
+            result = process.extractOne(
+                player_name,
+                player_names,
+                scorer=fuzz.WRatio,
+                score_cutoff=60
+            )
+
+            if not result:
+                logger.warning(f"Player '{player_name}' not found in {team} team")
+                return f"Could not find matching player for '{player_name}' in {team} team"
+
+            matched_name, score, index = result
+            logger.info(f"Matched '{player_name}' → '{matched_name}' (index: {index})")
+            return {"player_index": index, "matched_name": matched_name, "confidence_score": score}
+
+        return f"No player_name or player_number provided for {team} team lookup"
     except ValueError:
         raise
     except Exception as e:

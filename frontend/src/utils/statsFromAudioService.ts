@@ -19,7 +19,11 @@ export type NonShotResult = {
   delta: number;
 };
 
-export type StatsFromAudioResult = ShotResult | NonShotResult | undefined;
+export type StatsFromAudioResult =
+  | ShotResult
+  | NonShotResult
+  | undefined
+  | { error: "unclear stat" | "unclear which team" };
 export type StatsFromAudioStage =
   | "received"
   | "transcribing"
@@ -77,8 +81,12 @@ const mapApiResponseToResult = (
     } as NonShotResult;
   }
 
+  if (responseData === "unclear which team") {
+    return { error: "unclear which team" };
+  }
+
   if (responseData === "unclear stat") {
-    return undefined;
+    return { error: "unclear stat" };
   }
 
   return undefined;
