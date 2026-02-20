@@ -254,11 +254,19 @@ export const AudioRecorderModal = ({
       aria-describedby="modal-modal-description"
     >
       <Box sx={modalStyle}>
-        <p
+        <div
           style={{ margin: "0 0 16px", fontSize: "0.875rem", color: "#6b7280" }}
         >
-          Example: <em>"LeBron James scores a three"</em>
-        </p>
+          Examples:
+          <ul style={{ margin: "4px 0 0", paddingLeft: "1.25rem" }}>
+            <li>
+              <em>"LeBron James scores a three"</em>
+            </li>
+            <li>
+              <em>"Player number 3 from the home team gets an assist"</em>
+            </li>
+          </ul>
+        </div>
         <canvas
           ref={canvasRef}
           width={356}
