@@ -1,17 +1,11 @@
-import { useContext, useRef, useState } from "react";
+import { useState } from "react";
 import { FaMicrophone } from "react-icons/fa";
-import {
-  statsFromAudioService,
-  type StatsFromAudioProgressEvent,
-} from "../utils/statsFromAudioService";
-import { StatsContext } from "../App";
 import { ShotUpdateStack } from "./StatKeeper";
-import { getPlayerStack } from "../utils/playerStackUtils";
-import { toast } from "react-hot-toast";
 import { LuSparkles } from "react-icons/lu";
 import { Tooltip } from "@mui/material";
+import { AudioRecorderModal } from "./AudioRecorderModal";
 
-type AudioRecorderProps = {
+export type AudioRecorderType = {
   awayTeamName: string;
   homeTeamName: string;
   updateShot: (
@@ -33,155 +27,47 @@ type AudioRecorderProps = {
 const TOOL_TIP_TEXT =
   "Speak the player name and stat and our AI will record it automatically.";
 
-const AudioRecorder = ({
+export const AudioRecorder = ({
   awayTeamName,
   homeTeamName,
   updateShot,
   updateStat,
   shotUpdateStacks,
-}: AudioRecorderProps) => {
-  const { homePlayers, awayPlayers } = useContext(StatsContext);
-  const [recording, setRecording] = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const [processingMessage, setProcessingMessage] = useState(
-    "Sending audio to AI for analysis...",
-  );
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunks = useRef<Blob[]>([]);
+}: AudioRecorderType) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const startRecording = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mediaRecorder = new window.MediaRecorder(stream);
-    mediaRecorderRef.current = mediaRecorder;
-    audioChunks.current = [];
-    mediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        audioChunks.current.push(event.data);
-      }
-    };
-    mediaRecorder.onstop = async () => {
-      const audioBlob = new Blob(audioChunks.current, { type: "audio/webm" });
-
-      // Send audio to backend API for processing
-      setProcessing(true);
-      setProcessingMessage("Uploading audio...");
-      try {
-        const homeTeamData = {
-          name: homeTeamName,
-          players: homePlayers.map((p) => ({ name: p.name, number: p.number })),
-        };
-        const awayTeamData = {
-          name: awayTeamName,
-          players: awayPlayers.map((p) => ({ name: p.name, number: p.number })),
-        };
-
-        const result = await statsFromAudioService(
-          audioBlob,
-          homeTeamData,
-          awayTeamData,
-          (event: StatsFromAudioProgressEvent) => {
-            if (event.stage === "transcribed" && event.transcript) {
-              setProcessingMessage(`Transcribed: ${event.transcript}`);
-              return;
-            }
-            if (event.type === "result") {
-              setProcessingMessage("Finished processing audio");
-              return;
-            }
-          },
-        );
-
-        if (result) {
-          toast.success("Stats recorded from audio");
-          if (result.category === "shot") {
-            // Get the current player to access their current stats
-            const players = result.team === "home" ? homePlayers : awayPlayers;
-            const player = players[result.playerIndex];
-
-            // Map backend shot type to frontend shot type
-            const shotType = result.shotType as
-              | "freeThrow"
-              | "twoPointer"
-              | "threePointer";
-
-            // Calculate new shot stats
-            const currentShot = player[shotType];
-            const newShot = {
-              made: result.made ? currentShot.made + 1 : currentShot.made,
-              attempted: currentShot.attempted + 1,
-            };
-
-            // Calculate points
-            const points =
-              shotType === "freeThrow" ? 1 : shotType === "twoPointer" ? 2 : 3;
-            const pointsDiff = result.made ? points : 0;
-
-            // Update the shot
-            updateShot(
-              result.team,
-              result.playerIndex,
-              shotType,
-              newShot,
-              pointsDiff,
-            );
-            const playerStack = getPlayerStack(
-              shotUpdateStacks,
-              result.team,
-              result.playerIndex,
-            );
-            playerStack[
-              shotType as "freeThrow" | "twoPointer" | "threePointer"
-            ].push(result.made);
-          } else if (result.category === "non-shot") {
-            updateStat(
-              result.team,
-              result.playerIndex,
-              result.stat,
-              result.delta,
-            );
-          }
-        } else {
-          toast.error("Unable to recognize player or statistic from audio");
-        }
-      } catch (error) {
-        toast.error("Error processing audio");
-      } finally {
-        setProcessing(false);
-        setProcessingMessage("Sending audio to AI for analysis...");
-      }
-    };
-    mediaRecorder.start();
-    setRecording(true);
+  const handleOpenModal = () => {
+    setIsModalOpen(true);
   };
 
-  const stopRecording = () => {
-    mediaRecorderRef.current?.stop();
-    setRecording(false);
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
   };
 
   return (
     <div>
       <Tooltip title={TOOL_TIP_TEXT} arrow placement="top">
         <span>
-          <button
-            onClick={recording ? stopRecording : startRecording}
-            disabled={processing}
-          >
+          <button onClick={handleOpenModal}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <LuSparkles />
-              {processing
-                ? "Processing..."
-                : recording
-                  ? "Stop Recording"
-                  : "Auto-Record By Voice"}
+              {"Auto-Record By Voice"}
               <FaMicrophone />
             </div>
           </button>
         </span>
       </Tooltip>
-      {processing && (
-        <p style={{ fontSize: "12px", color: "#666" }}>{processingMessage}</p>
-      )}
+      <AudioRecorderModal
+        isOpen={isModalOpen}
+        handleClose={handleCloseModal}
+        data={{
+          awayTeamName,
+          homeTeamName,
+          updateShot,
+          updateStat,
+          shotUpdateStacks,
+        }}
+      />
     </div>
   );
 };
