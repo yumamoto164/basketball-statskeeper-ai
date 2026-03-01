@@ -4,6 +4,7 @@ import PlayerEntry from "./components/PlayerEntry";
 import StatKeeper from "./components/StatKeeper";
 import type { Player } from "./types";
 import { createContext } from "react";
+import { Analytics } from "@vercel/analytics/react";
 
 export const StatsContext = createContext<{
   homePlayers: Player[];
@@ -97,6 +98,7 @@ function App() {
           />
         )}
       </div>
+      <Analytics />
     </StatsContext.Provider>
   );
 }
