@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import "./App.css";
 import PlayerEntry from "./components/PlayerEntry";
 import StatKeeper from "./components/StatKeeper";
@@ -42,6 +43,7 @@ function App() {
   }, []);
 
   return (
+    <>
     <StatsContext.Provider
       value={{ homePlayers, setHomePlayers, awayPlayers, setAwayPlayers }}
     >
@@ -98,6 +100,8 @@ function App() {
         )}
       </div>
     </StatsContext.Provider>
+    <Analytics />
+    </>
   );
 }
 
