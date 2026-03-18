@@ -1,0 +1,12 @@
+import pytest
+from tests.fixtures.team_data import make_home_team, make_away_team
+
+
+@pytest.fixture(scope="session")
+def home_team():
+    return make_home_team()
+
+
+@pytest.fixture(scope="session")
+def away_team():
+    return make_away_team()
