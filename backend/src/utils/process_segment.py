@@ -1,36 +1,22 @@
-from langchain_openai import ChatOpenAI
 from src.utils.prompts import EXTRACTION_PROMPT_TEMPLATE
-from src.utils.types import ParsedEvent, TeamData
+from src.utils.types import ParsedEvent
 from src.tools import format_shot_data, format_non_shot_data, get_player_index
 
 def process_segment(
     segment: str,
-    model: ChatOpenAI,
-    home_team_data: TeamData,
-    away_team_data: TeamData,
+    extractor,
+    home_roster: str,
+    away_roster: str,
+    home_team_name: str,
+    away_team_name: str,
+    shared_numbers_note: str,
 ) -> dict | None:
-    home_roster = ", ".join([f"{p.name} (#{p.number})" for p in home_team_data.players])
-    away_roster = ", ".join([f"{p.name} (#{p.number})" for p in away_team_data.players])
-    home_numbers = {p.number for p in home_team_data.players}
-    away_numbers = {p.number for p in away_team_data.players}
-    shared_numbers = home_numbers & away_numbers
-    if shared_numbers:
-        shared_numbers_note = (
-            f"- Jersey numbers {sorted(shared_numbers)} appear on both teams. "
-            "If a player is identified only by one of these numbers and the team "
-            "cannot be clearly determined from the transcript (e.g. no team name "
-            "or home/away mentioned), set decision=\"unclear\"."
-        )
-    else:
-        shared_numbers_note = ""
-
-    extractor = model.with_structured_output(ParsedEvent.model_json_schema())
     extraction_prompt = EXTRACTION_PROMPT_TEMPLATE.format(
         transcript=segment,
         home_roster=home_roster,
         away_roster=away_roster,
-        home_team_name=home_team_data.team_name,
-        away_team_name=away_team_data.team_name,
+        home_team_name=home_team_name,
+        away_team_name=away_team_name,
         shared_numbers_note=shared_numbers_note,
     )
     parsed_event = ParsedEvent.model_validate(extractor.invoke(extraction_prompt))
