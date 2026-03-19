@@ -1,7 +1,5 @@
 import pytest
-from src.main import process_transcript
-
-pytestmark = pytest.mark.integration
+from src.utils.process_transcript import process_transcript
 
 
 @pytest.mark.parametrize("transcript, expected", [
@@ -22,8 +20,8 @@ pytestmark = pytest.mark.integration
     ),
     # Shot - jersey number match
     (
-        "Lakers number 15 made a three",
-        {"category": "shot", "team": "home", "player_index": 2, "shot_type": "threePointer", "made": True},
+        "Lakers number 6 made a three",
+        {"category": "shot", "team": "home", "player_index": 0, "shot_type": "threePointer", "made": True},
     ),
     # Non-shot - assist
     (
@@ -46,6 +44,7 @@ pytestmark = pytest.mark.integration
         {"response": "unclear stat"},
     ),
 ])
+
 def test_process_transcript(transcript, expected, home_team, away_team):
     result = process_transcript(transcript, home_team, away_team)
     if "response" in expected:
