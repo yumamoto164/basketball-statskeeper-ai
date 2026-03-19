@@ -51,19 +51,21 @@ npm run install:backend  # pip install -r backend/requirements.txt
 
 ### Backend (`backend/src/`)
 
-FastAPI app with a deterministic pipeline (single LLM call + fuzzy matching, no LangGraph agent graph at runtime):
+FastAPI app with a two-phase LLM pipeline + fuzzy matching (no LangGraph agent graph at runtime):
 
-1. **`main.py`** — Two endpoints: `POST /stats-from-audio` (JSON) and `POST /stats-from-audio/stream` (SSE). Both decode base64 audio, run transcription, extract stats, resolve player names, and return formatted results.
-2. **`tools.py`** — LangChain tools used as helper functions (not as agent tools):
-   - `speech_to_text()` — OpenAI Whisper API
-   - `format_shot_data()` / `format_non_shot_data()` — GPT-4o-mini structured output
+1. **`main.py`** — Two endpoints: `POST /stats-from-audio` (JSON) and `POST /stats-from-audio/stream` (SSE). Both decode base64 audio, run transcription, call `process_transcript`, and return a list of formatted stat results.
+2. **`utils/process_transcript.py`** — Core pipeline. Two-phase approach:
+   - **Phase 1 (Segment):** One GPT-4o-mini call splits the transcript into self-contained single-event descriptions, resolving pronouns and implicit references (e.g. "he scores" → "Anthony Davis scores").
+   - **Phase 2 (Extract):** For each segment, one GPT-4o-mini call extracts a single `ParsedEvent` (structured output), then rapidfuzz resolves the player name/number to a roster index, and the result is formatted. Returns `{"response": [...]}` — always a list.
+3. **`tools.py`** — LangChain tools used as helper functions (not as agent tools):
+   - `format_shot_data()` / `format_non_shot_data()` — formats a resolved event for the frontend
    - `get_player_index()` — rapidfuzz fuzzy matching against team roster
    - `set_agent_state()` — sets a module-level `_agent_state` dict shared between tools
-3. **`utils/types.py`** — Pydantic models: `Player`, `TeamData`, `Request`, `ParsedEvent`
-4. **`utils/prompts.py`** — LLM system prompts for stat extraction
-5. **`utils/sse_utils.py`** — SSE encoding/decoding helpers
+4. **`utils/types.py`** — Pydantic models: `Player`, `TeamData`, `Request`, `ParsedEvent`, `TranscriptSegments`
+5. **`utils/prompts.py`** — LLM prompts: `SEGMENTATION_PROMPT_TEMPLATE` (Phase 1) and `EXTRACTION_PROMPT_TEMPLATE` (Phase 2)
+6. **`utils/sse_utils.py`** — SSE encoding helpers and `_normalize_api_response`
 
-SSE progress events (streaming endpoint): `received → transcribing → transcribed → extracting → resolving_player → formatting → result`
+SSE progress events (streaming endpoint): `received → transcribing → transcribed → extracting → result`
 
 ### Frontend (`frontend/src/`)
 
@@ -73,8 +75,8 @@ React 19 + TypeScript + Vite. MUI for UI components.
 - **`types.ts`** — `Player` interface with all stat fields (points, shot breakdowns, assists, rebounds, steals, blocks, turnovers, fouls).
 - **`components/StatKeeper.tsx`** — Main game orchestrator. Manages selected player, stat updates, and per-player shot undo stacks.
 - **`components/AudioRecorder.tsx`** — Button that opens `AudioRecorderModal`.
-- **`components/AudioRecorderModal.tsx`** — Recording UI using `react-voice-visualizer`. Currently incomplete — needs to call `statsFromAudioService` and push result back into game state.
-- **`utils/statsFromAudioService.ts`** — Service layer. Converts audio Blob to base64, calls `/stats-from-audio/stream` (with SSE) or `/stats-from-audio` fallback. Returns typed `ShotResult | NonShotResult`.
+- **`components/AudioRecorderModal.tsx`** — Recording UI. Calls `statsFromAudioService`, iterates over the returned array of results, and applies each stat update to the game state. Displays a summary of all events processed.
+- **`utils/statsFromAudioService.ts`** — Service layer. Converts audio Blob to base64, calls `/stats-from-audio/stream` (with SSE) or `/stats-from-audio` fallback. Returns `StatsFromAudioResult[]` — always an array.
 
 ### Data Flow for Voice Input
 
@@ -82,7 +84,9 @@ React 19 + TypeScript + Vite. MUI for UI components.
 User records audio
   → AudioRecorderModal (captures Blob)
   → statsFromAudioService (base64 encode, POST to backend)
-  → backend: Whisper transcription → GPT-4o-mini extraction → rapidfuzz player match
-  → SSE progress events → final result JSON
-  → StatKeeper updates player stats
+  → backend: Whisper transcription
+      → Phase 1: GPT-4o-mini segments transcript into individual events (resolves pronouns)
+      → Phase 2: for each segment → GPT-4o-mini extracts ParsedEvent → rapidfuzz player match → format
+  → SSE progress events → final result JSON (array of events)
+  → AudioRecorderModal iterates results → StatKeeper updates each player's stats
 ```

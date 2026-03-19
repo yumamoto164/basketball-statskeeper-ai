@@ -92,10 +92,12 @@ class TestStatsFromAudio:
         data = r.json()
         assert "response" in data
         response = data["response"]
-        assert response["category"] == "shot"
-        assert response["team"] == "home"
-        assert response["shot_type"] == "threePointer"
-        assert response["made"] is True
+        assert isinstance(response, list)
+        assert len(response) >= 1
+        assert response[0]["category"] == "shot"
+        assert response[0]["team"] == "home"
+        assert response[0]["shot_type"] == "threePointer"
+        assert response[0]["made"] is True
 
     def test_stream_endpoint_stage_sequence(self, client):
         body = _make_request_body(FAKE_AUDIO)
@@ -117,4 +119,7 @@ class TestStatsFromAudio:
         result_events = [e for e in events if e["data"].get("type") == "result"]
         assert len(result_events) == 1
         response = result_events[0]["data"]["response"]
-        assert response["category"] == "shot"
+        print('result_events', result_events)
+        assert isinstance(response, list)
+        assert len(response) >= 1
+        assert response[0]["category"] == "shot"
