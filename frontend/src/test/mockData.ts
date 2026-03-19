@@ -1,6 +1,8 @@
 import { Player } from "../types";
 
 // Mock data for home and away teams
+export const mockHomeTeamName = "LA Lakers";
+export const mockAwayTeamName = "Golden State Warriors";
 export const mockHomePlayers: Player[] = [
   {
     name: "Lebron James",
