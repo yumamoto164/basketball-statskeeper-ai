@@ -32,3 +32,7 @@ class ParsedEvent(BaseModel):
             "fouls",
         ]
     ] = None
+
+
+class TranscriptSegments(BaseModel):
+    segments: list[str]

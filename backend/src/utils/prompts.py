@@ -1,5 +1,25 @@
+SEGMENTATION_PROMPT_TEMPLATE = """
+    You are a basketball stats assistant. Split this transcript into individual stat event descriptions.
+
+    Rules:
+    - Each segment must describe exactly one player action (a shot, assist, rebound, steal, etc.).
+    - Each segment must be fully self-contained: resolve all pronouns and implicit references so the
+      segment makes sense on its own without the rest of the transcript.
+      Example: "he shoots a three" → "Anthony Davis shoots a three" (if Anthony Davis was the referent).
+    - You may paraphrase or rewrite segments to make them clear, but do not add stats that weren't implied.
+    - Return segments in the order the events occur in the transcript.
+    - If there is only one event, return a list with one segment.
+
+    Example:
+    Input: "LeBron passes to Anthony Davis, he shoots a three and scores"
+    Output: ["LeBron James gets an assist", "Anthony Davis scores a three-pointer"]
+
+    Transcript:
+    {transcript}
+"""
+
 EXTRACTION_PROMPT_TEMPLATE = """
-    You extract structured basketball stat events from an audio transcript.
+    You extract a single structured basketball stat event from a transcript segment.
     Use only the transcript and team rosters provided below.
 
     Output rules:
@@ -15,7 +35,7 @@ EXTRACTION_PROMPT_TEMPLATE = """
     - shot_type must be one of: freeThrow, twoPointer, threePointer
     - stat_type must be one of: assists, offensiveRebounds, defensiveRebounds, steals, blocks, turnovers, fouls
 
-    Transcript:
+    Transcript segment:
     {transcript}
 
     Home team ({home_team_name}) roster:

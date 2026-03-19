@@ -24,7 +24,7 @@
 │  1. decode_audio()        ← base64 → bytes                       │
 │  2. set_agent_state()     ← stores team rosters in module global │
 │  3. transcribe_audio()    ─────────────────────────────────────► │
-│  4. process_transcript()  ← shared pipeline logic               │
+│  4. process_transcript()  ← shared pipeline logic                │
 └──────────────────────────┬──────────────────────────────────────┘
                            │
                            ▼
@@ -37,15 +37,22 @@
                            │ transcript
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│         utils/process_transcript.py — Step 1: Build Prompt       │
+│      utils/process_transcript.py — Phase 1: Segmentation         │
 │                                                                  │
-│  Combine transcript + home/away rosters + shared jersey note     │
-│  into EXTRACTION_PROMPT_TEMPLATE  (utils/prompts.py)             │
+│  GPT-4o-mini  (structured output → TranscriptSegments)           │
+│  Splits transcript into self-contained single-event strings,     │
+│  resolving pronouns and implicit references.                     │
+│  e.g. "LeBron passes, he scores" →                               │
+│       ["LeBron James gets an assist",                            │
+│        "Anthony Davis scores a two-pointer"]                     │
 └──────────────────────────┬──────────────────────────────────────┘
-                           │ filled prompt
-                           ▼
+                           │ list of segments
+                           │
+                           │  ┌─────────────────────────────────┐
+                           │  │  repeat for each segment:       │
+                           ▼  ▼                                 │
 ┌─────────────────────────────────────────────────────────────────┐
-│         utils/process_transcript.py — Step 2: LLM Extraction     │
+│      utils/process_transcript.py — Phase 2: LLM Extraction       │
 │                                                                  │
 │  GPT-4o-mini  (structured output → ParsedEvent)                  │
 │  Fields: decision, team, player_name, player_number,             │
@@ -54,17 +61,14 @@
                            │ ParsedEvent
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│         utils/process_transcript.py — Step 3: Ambiguity Guard    │
+│      utils/process_transcript.py — Phase 2: Clarity Check        │
 │                                                                  │
-│  If player_number appears on both rosters and no team context    │
-│  is present in the transcript → return "unclear which team"      │
-│  If decision="unclear" or missing player/team → return           │
-│  "unclear stat"                                                  │
+│  If decision="unclear" or missing player/team → skip event       │
 └──────────────────────────┬──────────────────────────────────────┘
                            │ validated ParsedEvent
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│         utils/process_transcript.py — Step 4: Player Resolution  │
+│      utils/process_transcript.py — Phase 2: Player Resolution    │
 │                                                                  │
 │  get_player_index()  (tools.py)                                  │
 │    ├─► Jersey number exact match        (priority 1)             │
@@ -73,19 +77,21 @@
                            │ player_index
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│         utils/process_transcript.py — Step 5: Format Output      │
+│      utils/process_transcript.py — Phase 2: Format Output        │
 │                                                                  │
 │  ├─► format_shot_data()     → {category, team, player_index,     │
 │  │                              shot_type, made}                 │
 │  └─► format_non_shot_data() → {category, team, player_index,     │
 │                                 stat, delta}                     │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
+│                                                    │             │
+│                                   append to results list         │
+└─────────────────────────────────────────────────────────────────┘
+                           │  (loop ends)
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Response to Client                            │
 │                                                                  │
-│  JSON: { "response": <shot_data | non_shot_data | "unclear ..."> }│
+│  JSON: { "response": [ <event>, <event>, ... ] }                 │
 │  SSE:  progress events → final result event                      │
 │        received → transcribing → transcribed → extracting → result│
 └─────────────────────────────────────────────────────────────────┘
@@ -93,8 +99,9 @@
 
 ## Key Architectural Notes
 
-- **Deterministic pipeline, not an agent graph** — there's no LangGraph or tool-calling loop. The LangChain tools (`format_shot_data`, `format_non_shot_data`, `get_player_index`) are used as plain functions, invoked directly.
-- **Single LLM call** — GPT-4o-mini does one structured extraction (`ParsedEvent`) from the transcript. No multi-turn or chained LLM calls.
+- **Two-phase LLM pipeline, not an agent graph** — Phase 1 segments the transcript into self-contained event descriptions (resolving pronouns). Phase 2 runs one structured extraction per segment. No LangGraph or tool-calling loop.
+- **Multiple LLM calls** — one GPT-4o-mini call for segmentation, then one per segment for extraction. Total calls = 1 + N where N is the number of events in the transcript.
+- **Response is always a list** — `process_transcript()` returns `{"response": [...]}` with 0 or more events. Single-event transcripts return a one-element list.
 - **Module-level shared state** — `_agent_state` dict in `tools.py` is a global that stores team roster data, accessed by tools at call time.
 - **Two endpoints, one pipeline** — both `/stats-from-audio` and `/stats-from-audio/stream` share the same `process_transcript()` logic; the streaming one wraps it with SSE progress events.
 
