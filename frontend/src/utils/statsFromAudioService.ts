@@ -19,11 +19,9 @@ export type NonShotResult = {
   delta: number;
 };
 
-export type StatsFromAudioResult =
-  | ShotResult
-  | NonShotResult
-  | undefined
-  | { error: "unclear stat" | "unclear which team" };
+export type StatsFromAudioResult = ShotResult | NonShotResult;
+
+export type StatsFromAudioResults = StatsFromAudioResult[];
 export type StatsFromAudioStage =
   | "received"
   | "transcribing"
@@ -41,10 +39,10 @@ export type StatsFromAudioProgressEvent = {
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
-const mapApiResponseToResult = (
+const mapApiResponseItemToResult = (
   responseData: unknown,
-): StatsFromAudioResult => {
-  if (!responseData) return undefined;
+): StatsFromAudioResult | undefined => {
+  if (!responseData || typeof responseData !== "object") return undefined;
 
   const response = responseData as Record<string, unknown>;
   if (response.category === "shot") {
@@ -55,13 +53,7 @@ const mapApiResponseToResult = (
       shot_type: "freeThrow" | "twoPointer" | "threePointer";
       made: boolean;
     };
-    return {
-      category,
-      team,
-      playerIndex: player_index,
-      shotType: shot_type,
-      made,
-    } as ShotResult;
+    return { category, team, playerIndex: player_index, shotType: shot_type, made } as ShotResult;
   }
 
   if (response.category === "non-shot") {
@@ -72,24 +64,17 @@ const mapApiResponseToResult = (
       stat: string;
       delta: number;
     };
-    return {
-      category,
-      team,
-      playerIndex: player_index,
-      stat,
-      delta,
-    } as NonShotResult;
-  }
-
-  if (responseData === "unclear which team") {
-    return { error: "unclear which team" };
-  }
-
-  if (responseData === "unclear stat") {
-    return { error: "unclear stat" };
+    return { category, team, playerIndex: player_index, stat, delta } as NonShotResult;
   }
 
   return undefined;
+};
+
+const mapApiResponseToResults = (responseData: unknown): StatsFromAudioResults => {
+  if (!Array.isArray(responseData)) return [];
+  return responseData
+    .map(mapApiResponseItemToResult)
+    .filter((r): r is StatsFromAudioResult => r !== undefined);
 };
 
 const parseSseEventData = (eventChunk: string): unknown | null => {
@@ -113,7 +98,7 @@ const parseSseEventData = (eventChunk: string): unknown | null => {
 const streamStatsFromAudio = async (
   requestBody: Record<string, unknown>,
   onProgress?: (event: StatsFromAudioProgressEvent) => void,
-): Promise<StatsFromAudioResult> => {
+): Promise<StatsFromAudioResults> => {
   const response = await fetch(`${apiUrl}/stats-from-audio/stream`, {
     method: "POST",
     headers: {
@@ -130,7 +115,7 @@ const streamStatsFromAudio = async (
   const reader = response.body.getReader();
   const decoder = new TextDecoder("utf-8");
   let buffer = "";
-  let finalResult: StatsFromAudioResult = undefined;
+  let finalResult: StatsFromAudioResults = [];
 
   while (true) {
     const { done, value } = await reader.read();
@@ -157,7 +142,7 @@ const streamStatsFromAudio = async (
           transcript: parsed.transcript ? String(parsed.transcript) : undefined,
         });
       } else if (parsed.type === "result") {
-        finalResult = mapApiResponseToResult(parsed.response);
+        finalResult = mapApiResponseToResults(parsed.response);
       } else if (parsed.type === "error") {
         throw new Error(String(parsed.detail ?? "Streaming error"));
       }
@@ -169,7 +154,7 @@ const streamStatsFromAudio = async (
 
 const fetchStatsFromAudio = async (
   requestBody: Record<string, unknown>,
-): Promise<StatsFromAudioResult> => {
+): Promise<StatsFromAudioResults> => {
   const response = await fetch(`${apiUrl}/stats-from-audio`, {
     method: "POST",
     headers: {
@@ -178,7 +163,7 @@ const fetchStatsFromAudio = async (
     body: JSON.stringify(requestBody),
   });
   const data = await response.json();
-  return mapApiResponseToResult(data?.response);
+  return mapApiResponseToResults(data?.response);
 };
 
 export const statsFromAudioService = async (
@@ -186,7 +171,7 @@ export const statsFromAudioService = async (
   homeTeamData: RequestTeamData,
   awayTeamData: RequestTeamData,
   onProgress?: (event: StatsFromAudioProgressEvent) => void,
-): Promise<StatsFromAudioResult> => {
+): Promise<StatsFromAudioResults> => {
   // convert audio Blob to base64 string using FileReader
   const audioBase64: string = await new Promise((resolve, reject) => {
     const reader = new FileReader();

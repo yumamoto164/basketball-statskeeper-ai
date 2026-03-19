@@ -138,71 +138,66 @@ export const AudioRecorderModal = ({
           },
         );
 
-        if (apiResult && "category" in apiResult) {
-          if (apiResult.category === "shot") {
-            const players =
-              apiResult.team === "home" ? homePlayers : awayPlayers;
-            const player = players[apiResult.playerIndex];
-            const shotType = apiResult.shotType as
-              | "freeThrow"
-              | "twoPointer"
-              | "threePointer";
-            const currentShot = player[shotType];
-            const newShot = {
-              made: apiResult.made ? currentShot.made + 1 : currentShot.made,
-              attempted: currentShot.attempted + 1,
-            };
-            const points =
-              shotType === "freeThrow" ? 1 : shotType === "twoPointer" ? 2 : 3;
-            const pointsDiff = apiResult.made ? points : 0;
-            updateShot(
-              apiResult.team,
-              apiResult.playerIndex,
-              shotType,
-              newShot,
-              pointsDiff,
-            );
-            const playerStack = getPlayerStack(
-              shotUpdateStacks,
-              apiResult.team,
-              apiResult.playerIndex,
-            );
-            playerStack[shotType].push(apiResult.made);
-
-            const label = SHOT_TYPE_LABELS[shotType] ?? shotType;
-            setResult({
-              status: "success",
-              message: `${apiResult.made ? "Made" : "Missed"} ${label} — ${player.name}`,
-            });
-          } else if (apiResult.category === "non-shot") {
-            updateStat(
-              apiResult.team,
-              apiResult.playerIndex,
-              apiResult.stat,
-              apiResult.delta,
-            );
-            const players =
-              apiResult.team === "home" ? homePlayers : awayPlayers;
-            const player = players[apiResult.playerIndex];
-            setResult({
-              status: "success",
-              message: `${apiResult.stat.charAt(0).toUpperCase() + apiResult.stat.slice(1)} — ${player.name}`,
-            });
-          }
-        } else if (
-          apiResult &&
-          "error" in apiResult &&
-          apiResult.error === "unclear which team"
-        ) {
-          setResult({
-            status: "error",
-            message:
-              "Couldn't determine which team — please mention the team name",
-          });
-        } else {
+        if (apiResult.length === 0) {
           setResult({
             status: "error",
             message: "Couldn't recognize a player or stat — try again",
+          });
+        } else {
+          const messages: string[] = [];
+
+          for (const event of apiResult) {
+            if (event.category === "shot") {
+              const players =
+                event.team === "home" ? homePlayers : awayPlayers;
+              const player = players[event.playerIndex];
+              const shotType = event.shotType as
+                | "freeThrow"
+                | "twoPointer"
+                | "threePointer";
+              const currentShot = player[shotType];
+              const newShot = {
+                made: event.made ? currentShot.made + 1 : currentShot.made,
+                attempted: currentShot.attempted + 1,
+              };
+              const points =
+                shotType === "freeThrow" ? 1 : shotType === "twoPointer" ? 2 : 3;
+              const pointsDiff = event.made ? points : 0;
+              updateShot(
+                event.team,
+                event.playerIndex,
+                shotType,
+                newShot,
+                pointsDiff,
+              );
+              const playerStack = getPlayerStack(
+                shotUpdateStacks,
+                event.team,
+                event.playerIndex,
+              );
+              playerStack[shotType].push(event.made);
+
+              const label = SHOT_TYPE_LABELS[shotType] ?? shotType;
+              messages.push(`${event.made ? "Made" : "Missed"} ${label} — ${player.name}`);
+            } else if (event.category === "non-shot") {
+              updateStat(
+                event.team,
+                event.playerIndex,
+                event.stat,
+                event.delta,
+              );
+              const players =
+                event.team === "home" ? homePlayers : awayPlayers;
+              const player = players[event.playerIndex];
+              messages.push(
+                `${event.stat.charAt(0).toUpperCase() + event.stat.slice(1)} — ${player.name}`,
+              );
+            }
+          }
+
+          setResult({
+            status: "success",
+            message: messages.join(" + "),
           });
         }
       } catch {

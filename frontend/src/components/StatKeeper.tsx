@@ -46,10 +46,9 @@ function StatKeeper({
     delta: number,
   ): void => {
     const setter = team === "home" ? setHomePlayers : setAwayPlayers;
-    const players = team === "home" ? homePlayers : awayPlayers;
 
-    setter(
-      players.map((p, i) => {
+    setter((prev) =>
+      prev.map((p, i) => {
         if (i === playerIndex) {
           const newValue = Math.max(
             0,
@@ -70,10 +69,9 @@ function StatKeeper({
     pointsDiff: number,
   ): void => {
     const setter = team === "home" ? setHomePlayers : setAwayPlayers;
-    const players = team === "home" ? homePlayers : awayPlayers;
 
-    setter(
-      players.map((p, i) => {
+    setter((prev) =>
+      prev.map((p, i) => {
         if (i === playerIndex) {
           return {
             ...p,
