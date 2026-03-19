@@ -53,10 +53,17 @@ python -m src.main
 ```
 backend/
   src/
-    main.py          # Main entry point
-  requirements.txt   # Python dependencies
+    main.py                      # FastAPI app — /stats-from-audio (JSON) and /stats-from-audio/stream (SSE)
+    tools.py                     # LangChain helper tools: format_shot_data, format_non_shot_data, get_player_index, set_agent_state
+    utils/
+      process_transcript.py      # Pipeline orchestrator — Phase 1 (segment) + Phase 2 (parallel extract)
+      process_segment.py         # Per-segment extraction — LLM → ParsedEvent → fuzzy match → format
+      types.py                   # Pydantic models: Player, TeamData, Request, ParsedEvent, TranscriptSegments
+      prompts.py                 # LLM prompt templates for segmentation and extraction
+      sse_utils.py               # SSE encoding helpers
+  requirements.txt               # Python dependencies
   README.md
-  venv/             # Virtual environment (gitignored)
+  venv/                          # Virtual environment (gitignored)
 ```
 
 ## Environment Variables

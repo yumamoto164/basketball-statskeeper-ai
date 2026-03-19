@@ -54,16 +54,17 @@ npm run install:backend  # pip install -r backend/requirements.txt
 FastAPI app with a two-phase LLM pipeline + fuzzy matching (no LangGraph agent graph at runtime):
 
 1. **`main.py`** — Two endpoints: `POST /stats-from-audio` (JSON) and `POST /stats-from-audio/stream` (SSE). Both decode base64 audio, run transcription, call `process_transcript`, and return a list of formatted stat results.
-2. **`utils/process_transcript.py`** — Core pipeline. Two-phase approach:
+2. **`utils/process_transcript.py`** — Pipeline orchestrator. Two-phase approach:
    - **Phase 1 (Segment):** One GPT-4o-mini call splits the transcript into self-contained single-event descriptions, resolving pronouns and implicit references (e.g. "he scores" → "Anthony Davis scores").
-   - **Phase 2 (Extract):** For each segment, one GPT-4o-mini call extracts a single `ParsedEvent` (structured output), then rapidfuzz resolves the player name/number to a roster index, and the result is formatted. Returns `{"response": [...]}` — always a list.
-3. **`tools.py`** — LangChain tools used as helper functions (not as agent tools):
+   - **Phase 2 (Extract):** Dispatches each segment to `process_segment` in parallel via `ThreadPoolExecutor`. Returns `{"response": [...]}` — always a list.
+3. **`utils/process_segment.py`** — Handles extraction for a single segment. One GPT-4o-mini call extracts a `ParsedEvent` (structured output), rapidfuzz resolves the player name/number to a roster index, and the result is formatted. Returns a dict or `None` if the event is unclear/invalid.
+4. **`tools.py`** — LangChain tools used as helper functions (not as agent tools):
    - `format_shot_data()` / `format_non_shot_data()` — formats a resolved event for the frontend
    - `get_player_index()` — rapidfuzz fuzzy matching against team roster
    - `set_agent_state()` — sets a module-level `_agent_state` dict shared between tools
-4. **`utils/types.py`** — Pydantic models: `Player`, `TeamData`, `Request`, `ParsedEvent`, `TranscriptSegments`
-5. **`utils/prompts.py`** — LLM prompts: `SEGMENTATION_PROMPT_TEMPLATE` (Phase 1) and `EXTRACTION_PROMPT_TEMPLATE` (Phase 2)
-6. **`utils/sse_utils.py`** — SSE encoding helpers and `_normalize_api_response`
+5. **`utils/types.py`** — Pydantic models: `Player`, `TeamData`, `Request`, `ParsedEvent`, `TranscriptSegments`
+6. **`utils/prompts.py`** — LLM prompts: `SEGMENTATION_PROMPT_TEMPLATE` (Phase 1) and `EXTRACTION_PROMPT_TEMPLATE` (Phase 2)
+7. **`utils/sse_utils.py`** — SSE encoding helpers and `_normalize_api_response`
 
 SSE progress events (streaming endpoint): `received → transcribing → transcribed → extracting → result`
 
@@ -86,7 +87,7 @@ User records audio
   → statsFromAudioService (base64 encode, POST to backend)
   → backend: Whisper transcription
       → Phase 1: GPT-4o-mini segments transcript into individual events (resolves pronouns)
-      → Phase 2: for each segment → GPT-4o-mini extracts ParsedEvent → rapidfuzz player match → format
+      → Phase 2: segments dispatched in parallel → each: GPT-4o-mini extracts ParsedEvent → rapidfuzz player match → format
   → SSE progress events → final result JSON (array of events)
   → AudioRecorderModal iterates results → StatKeeper updates each player's stats
 ```
