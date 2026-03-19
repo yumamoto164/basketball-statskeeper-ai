@@ -123,6 +123,25 @@
   color: #1a1a1a;
 }
 
+/* Mock Data Button */
+.mock-data-link {
+  display: block;
+  margin: 1rem auto;
+  padding: 0.5rem 1.25rem;
+  background-color: #374151;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.875rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.mock-data-link:hover {
+  background-color: #1f2937;
+}
+
 /* Team Name Input */
 .team-name-input {
   width: 100%;

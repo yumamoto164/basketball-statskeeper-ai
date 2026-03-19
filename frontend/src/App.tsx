@@ -5,6 +5,7 @@ import PlayerEntry from "./components/PlayerEntry";
 import StatKeeper from "./components/StatKeeper";
 import type { Player } from "./types";
 import { createContext } from "react";
+import { LoadMockDataButton } from "./components/LoadMockDataButton";
 
 export const StatsContext = createContext<{
   homePlayers: Player[];
@@ -44,63 +45,69 @@ function App() {
 
   return (
     <>
-    <StatsContext.Provider
-      value={{ homePlayers, setHomePlayers, awayPlayers, setAwayPlayers }}
-    >
-      <div className="App">
-        <a
-          href="mailto:yumamoto164@gmail.com?subject=Basketball Stats Keeper"
-          className="contact-button"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Contact Me
-        </a>
+      <StatsContext.Provider
+        value={{ homePlayers, setHomePlayers, awayPlayers, setAwayPlayers }}
+      >
+        <div className="App">
+          <a
+            href="mailto:yumamoto164@gmail.com?subject=Basketball Stats Keeper"
+            className="contact-button"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Contact Me
+          </a>
 
-        <div className="header-section">
-          <h1 className="main-title">
-            "Speak-the-Play" Basketball Statskeeper
-          </h1>
-          <span className="ai-badge">✦ AI-Powered</span>
-          <p className="subtitle">
-            {started
-              ? "Record basketball stats by voice with our AI"
-              : "Set up both team rosters to get started"}
-          </p>
+          <div className="header-section">
+            <h1 className="main-title">
+              "Speak-the-Play" Basketball Statskeeper
+            </h1>
+            <span className="ai-badge">✦ AI-Powered</span>
+            <p className="subtitle">
+              {started
+                ? "Record basketball stats by voice with our AI"
+                : "Set up both team rosters to get started"}
+            </p>
+            {!started && (
+              <LoadMockDataButton
+                setAwayTeamName={setAwayTeamName}
+                setHomeTeamName={setHomeTeamName}
+              />
+            )}
+          </div>
+
+          {!started ? (
+            <>
+              <div className="teams-container">
+                <PlayerEntry
+                  team="Home"
+                  teamName={homeTeamName}
+                  setTeamName={setHomeTeamName}
+                />
+                <PlayerEntry
+                  team="Away"
+                  teamName={awayTeamName}
+                  setTeamName={setAwayTeamName}
+                />
+              </div>
+              <button
+                className="start-game-button"
+                disabled={homePlayers.length === 0 || awayPlayers.length === 0}
+                onClick={() => setStarted(true)}
+              >
+                Start Game
+              </button>
+            </>
+          ) : (
+            <StatKeeper
+              homeTeamName={homeTeamName}
+              awayTeamName={awayTeamName}
+              onEndGame={() => setStarted(false)}
+            />
+          )}
         </div>
-
-        {!started ? (
-          <>
-            <div className="teams-container">
-              <PlayerEntry
-                team="Home"
-                teamName={homeTeamName}
-                setTeamName={setHomeTeamName}
-              />
-              <PlayerEntry
-                team="Away"
-                teamName={awayTeamName}
-                setTeamName={setAwayTeamName}
-              />
-            </div>
-            <button
-              className="start-game-button"
-              disabled={homePlayers.length === 0 || awayPlayers.length === 0}
-              onClick={() => setStarted(true)}
-            >
-              Start Game
-            </button>
-          </>
-        ) : (
-          <StatKeeper
-            homeTeamName={homeTeamName}
-            awayTeamName={awayTeamName}
-            onEndGame={() => setStarted(false)}
-          />
-        )}
-      </div>
-    </StatsContext.Provider>
-    <Analytics />
+      </StatsContext.Provider>
+      <Analytics />
     </>
   );
 }
