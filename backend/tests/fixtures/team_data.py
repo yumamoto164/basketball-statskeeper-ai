@@ -15,6 +15,7 @@ def make_home_team() -> TeamData:
             Player(name="Taurean Prince", number="12"),
             Player(name="Max Christie", number="10"),
             Player(name="Jaxson Hayes", number="11"),
+            Player(name="Michael Jordan", number="23")
         ]
     )
 
