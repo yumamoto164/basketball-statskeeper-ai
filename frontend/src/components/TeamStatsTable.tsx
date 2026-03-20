@@ -6,6 +6,21 @@ interface TeamStatsTableProps {
   team: "home" | "away";
 }
 
+const COLUMNS = [
+  { label: "#", width: "5%" },
+  { label: "Player", width: "20%" },
+  { label: "PTS", width: "7%" },
+  { label: "FG", width: "8%" },
+  { label: "3PT", width: "8%" },
+  { label: "FT", width: "8%" },
+  { label: "AST", width: "7%" },
+  { label: "REB", width: "7%" },
+  { label: "STL", width: "7%" },
+  { label: "BLK", width: "7%" },
+  { label: "TO", width: "7%" },
+  { label: "PF", width: "7%" },
+];
+
 function TeamStatsTable({ team }: TeamStatsTableProps) {
   const isHome = team === "home";
   const { homePlayers, awayPlayers } = useContext(StatsContext);
@@ -36,26 +51,32 @@ function TeamStatsTable({ team }: TeamStatsTableProps) {
 
   const theadClass = isHome ? "stats-thead-home" : "stats-thead-away";
 
+  const colgroup = (
+    <colgroup>
+      {COLUMNS.map((col) => (
+        <col key={col.label} style={{ width: col.width }} />
+      ))}
+    </colgroup>
+  );
+
   return (
     <div className="team-stats-table">
-      <div className="stats-table-container">
-        <table className="stats-table">
-          <thead className={theadClass}>
-            <tr>
-              <th>#</th>
-              <th>Player</th>
-              <th>PTS</th>
-              <th>FG</th>
-              <th>3PT</th>
-              <th>FT</th>
-              <th>AST</th>
-              <th>REB</th>
-              <th>STL</th>
-              <th>BLK</th>
-              <th>TO</th>
-              <th>PF</th>
-            </tr>
-          </thead>
+      {/* Fixed header table */}
+      <table className="stats-table stats-table-header-only" style={{ tableLayout: "fixed" }}>
+        {colgroup}
+        <thead className={theadClass}>
+          <tr>
+            {COLUMNS.map((col) => (
+              <th key={col.label}>{col.label}</th>
+            ))}
+          </tr>
+        </thead>
+      </table>
+
+      {/* Scrollable body container */}
+      <div className="stats-table-body-container">
+        <table className="stats-table" style={{ tableLayout: "fixed" }}>
+          {colgroup}
           <tbody>
             {players.map((player, index) => (
               <tr key={index}>

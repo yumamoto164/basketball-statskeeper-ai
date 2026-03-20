@@ -896,6 +896,8 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .stats-table-header {
@@ -922,11 +924,14 @@
   background-color: white;
 }
 
-.stats-table-container {
+.stats-table-body-container {
   overflow-y: auto;
-  overflow-x: auto;
-  padding: 1rem;
   flex: 1;
+  min-height: 0;
+}
+
+.stats-table-header-only {
+  width: 100%;
 }
 
 .stats-table {
@@ -935,22 +940,12 @@
   font-size: 0.875rem;
 }
 
-.stats-table thead {
-  background-color: #f9fafb;
-}
-
 .stats-table thead.stats-thead-home th {
   background-color: #2563eb;
-  position: sticky;
-  top: 0;
-  z-index: 1;
 }
 
 .stats-table thead.stats-thead-away th {
   background-color: #dc2626;
-  position: sticky;
-  top: 0;
-  z-index: 1;
 }
 
 .stats-table th {
