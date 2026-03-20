@@ -20,7 +20,7 @@ function SaveStatsAsCSVButton({
     saveAs(blob, "basketball_stats.csv");
   };
   return (
-    <button style={{ marginTop: 24 }} onClick={handleSave}>
+    <button style={{ marginTop: 24, backgroundColor: "#374151", color: "white" }} onClick={handleSave}>
       Save Stats as CSV
     </button>
   );

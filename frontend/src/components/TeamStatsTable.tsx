@@ -4,14 +4,25 @@ import type { Player } from "../types";
 
 interface TeamStatsTableProps {
   team: "home" | "away";
-  teamName: string;
 }
 
-function TeamStatsTable({ team, teamName }: TeamStatsTableProps) {
+const COLUMNS = [
+  { label: "#", width: "5%" },
+  { label: "Player", width: "20%" },
+  { label: "PTS", width: "7%" },
+  { label: "FG", width: "8%" },
+  { label: "3PT", width: "8%" },
+  { label: "FT", width: "8%" },
+  { label: "AST", width: "7%" },
+  { label: "REB", width: "7%" },
+  { label: "STL", width: "7%" },
+  { label: "BLK", width: "7%" },
+  { label: "TO", width: "7%" },
+  { label: "PF", width: "7%" },
+];
+
+function TeamStatsTable({ team }: TeamStatsTableProps) {
   const isHome = team === "home";
-  const headerClass = isHome
-    ? "stats-table-header home-header"
-    : "stats-table-header away-header";
   const { homePlayers, awayPlayers } = useContext(StatsContext);
   const players = isHome ? homePlayers : awayPlayers;
 
@@ -38,30 +49,34 @@ function TeamStatsTable({ team, teamName }: TeamStatsTableProps) {
     return player.offensiveRebounds + player.defensiveRebounds;
   };
 
+  const theadClass = isHome ? "stats-thead-home" : "stats-thead-away";
+
+  const colgroup = (
+    <colgroup>
+      {COLUMNS.map((col) => (
+        <col key={col.label} style={{ width: col.width }} />
+      ))}
+    </colgroup>
+  );
+
   return (
     <div className="team-stats-table">
-      <div className={headerClass}>
-        <div className="stats-table-dot"></div>
-        <span>{teamName || (isHome ? "Team A" : "Team B")} Stats</span>
-      </div>
-      <div className="stats-table-container">
-        <table className="stats-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Player</th>
-              <th>PTS</th>
-              <th>FG</th>
-              <th>3PT</th>
-              <th>FT</th>
-              <th>AST</th>
-              <th>REB</th>
-              <th>STL</th>
-              <th>BLK</th>
-              <th>TO</th>
-              <th>PF</th>
-            </tr>
-          </thead>
+      {/* Fixed header table */}
+      <table className="stats-table stats-table-header-only" style={{ tableLayout: "fixed" }}>
+        {colgroup}
+        <thead className={theadClass}>
+          <tr>
+            {COLUMNS.map((col) => (
+              <th key={col.label}>{col.label}</th>
+            ))}
+          </tr>
+        </thead>
+      </table>
+
+      {/* Scrollable body container */}
+      <div className="stats-table-body-container">
+        <table className="stats-table" style={{ tableLayout: "fixed" }}>
+          {colgroup}
           <tbody>
             {players.map((player, index) => (
               <tr key={index}>

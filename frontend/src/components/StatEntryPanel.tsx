@@ -1,23 +1,28 @@
 import type { Player } from "../types";
 import { getPlayerStack } from "../utils/playerStackUtils";
 import { ShotUpdateStack } from "./StatKeeper";
+import TeamStatsTable from "./TeamStatsTable";
+import PlayerStatEntry from "./PlayerStatEntry";
 
 interface StatEntryPanelProps {
   player: Player | null;
   team: "home" | "away";
+  teamName: string;
   playerIndex: number | null;
+  players: Player[];
+  onSelectPlayer: (index: number) => void;
   onUpdateStat: (
     team: "home" | "away",
     playerIndex: number,
     stat: string,
-    value: number
+    value: number,
   ) => void;
   onUpdateShot: (
     team: "home" | "away",
     playerIndex: number,
     shotType: "freeThrow" | "twoPointer" | "threePointer",
     shotStats: { made: number; attempted: number },
-    pointsDiff: number
+    pointsDiff: number,
   ) => void;
   shotUpdateStacks: React.RefObject<ShotUpdateStack>;
 }
@@ -25,21 +30,14 @@ interface StatEntryPanelProps {
 function StatEntryPanel({
   player,
   team,
+  teamName,
   playerIndex,
+  players,
+  onSelectPlayer,
   onUpdateStat,
   onUpdateShot,
   shotUpdateStacks,
 }: StatEntryPanelProps) {
-  if (!player) {
-    return (
-      <div className="stat-entry-panel">
-        <div className="no-player-selected">Select a player to track stats</div>
-      </div>
-    );
-  }
-
-  const isHome = team === "home";
-
   const updateStat = (stat: string, delta: number) => {
     if (playerIndex !== null) {
       onUpdateStat(team, playerIndex, stat, delta);
@@ -48,12 +46,11 @@ function StatEntryPanel({
 
   const handleShot = (
     type: "freeThrow" | "twoPointer" | "threePointer",
-    made: boolean
+    made: boolean,
   ) => {
-    if (playerIndex === null) return;
+    if (playerIndex === null || !player) return;
 
     const playerStack = getPlayerStack(shotUpdateStacks, team, playerIndex);
-
     const currentShot = player[type];
     const newShot = {
       made: made ? currentShot.made + 1 : currentShot.made,
@@ -61,22 +58,16 @@ function StatEntryPanel({
     };
 
     const points = type === "freeThrow" ? 1 : type === "twoPointer" ? 2 : 3;
-    const pointsDiff = made ? points : 0;
-
-    onUpdateShot(team, playerIndex, type, newShot, pointsDiff);
+    onUpdateShot(team, playerIndex, type, newShot, made ? points : 0);
     playerStack[type].push(made);
   };
 
   const handleUndo = (type: "freeThrow" | "twoPointer" | "threePointer") => {
-    if (playerIndex === null) return;
+    if (playerIndex === null || !player) return;
 
     const playerStack = getPlayerStack(shotUpdateStacks, team, playerIndex);
-
     const currentShot = player[type];
-    if (currentShot.attempted === 0) return;
-
-    // Pop from the stack to get the last shot's made/missed status
-    if (playerStack[type].length === 0) return;
+    if (currentShot.attempted === 0 || playerStack[type].length === 0) return;
 
     const lastShotMade = playerStack[type].pop();
     if (lastShotMade === undefined) return;
@@ -87,180 +78,40 @@ function StatEntryPanel({
     };
 
     const points = type === "freeThrow" ? 1 : type === "twoPointer" ? 2 : 3;
-    // If the popped shot was made (true), subtract points; if missed (false), pointsDiff is 0
-    const pointsDiff = lastShotMade ? -points : 0;
+    onUpdateShot(team, playerIndex, type, newShot, lastShotMade ? -points : 0);
+  };
 
-    onUpdateShot(team, playerIndex, type, newShot, pointsDiff);
+  const totalRebounds = player
+    ? player.offensiveRebounds + player.defensiveRebounds
+    : 0;
+
+  const handleReboundIncrement = () => updateStat("offensiveRebounds", 1);
+  const handleReboundDecrement = () => {
+    if (!player) return;
+    if (player.defensiveRebounds > 0) updateStat("defensiveRebounds", -1);
+    else updateStat("offensiveRebounds", -1);
   };
 
   return (
-    <div className="stat-entry-panel">
-      <div className="selected-player-header">
-        <div className="selected-player-icon">{player.number}</div>
-        <div className="selected-player-info">
-          <div className="selected-player-name">
-            {player.name}
-            <span
-              className={`team-label ${isHome ? "home-label" : "away-label"}`}
-            >
-              {isHome ? "HOME" : "AWAY"}
-            </span>
-          </div>
-          <div className="selected-player-points">{player.points} points</div>
-        </div>
-      </div>
-
-      <div className="scoring-stats">
-        <div className="scoring-stat-card">
-          <div className="scoring-stat-header">
-            Free Throws {player.freeThrow.made}/{player.freeThrow.attempted}
-          </div>
-          <div className="scoring-stat-buttons">
-            <button
-              className="stat-button made-button"
-              onClick={() => handleShot("freeThrow", true)}
-            >
-              Made
-            </button>
-            <button
-              className="stat-button missed-button"
-              onClick={() => handleShot("freeThrow", false)}
-            >
-              Missed
-            </button>
-            <button
-              className="stat-button undo-button"
-              onClick={() => handleUndo("freeThrow")}
-              disabled={player.freeThrow.attempted === 0}
-            >
-              Undo
-            </button>
-          </div>
-        </div>
-
-        <div className="scoring-stat-card">
-          <div className="scoring-stat-header">
-            2-Pointers {player.twoPointer.made}/{player.twoPointer.attempted}
-          </div>
-          <div className="scoring-stat-buttons">
-            <button
-              className="stat-button made-button"
-              onClick={() => handleShot("twoPointer", true)}
-            >
-              Made
-            </button>
-            <button
-              className="stat-button missed-button"
-              onClick={() => handleShot("twoPointer", false)}
-            >
-              Missed
-            </button>
-            <button
-              className="stat-button undo-button"
-              onClick={() => handleUndo("twoPointer")}
-              disabled={player.twoPointer.attempted === 0}
-            >
-              Undo
-            </button>
-          </div>
-        </div>
-
-        <div className="scoring-stat-card">
-          <div className="scoring-stat-header">
-            3-Pointers {player.threePointer.made}/
-            {player.threePointer.attempted}
-          </div>
-          <div className="scoring-stat-buttons">
-            <button
-              className="stat-button made-button"
-              onClick={() => handleShot("threePointer", true)}
-            >
-              Made
-            </button>
-            <button
-              className="stat-button missed-button"
-              onClick={() => handleShot("threePointer", false)}
-            >
-              Missed
-            </button>
-            <button
-              className="stat-button undo-button"
-              onClick={() => handleUndo("threePointer")}
-              disabled={player.threePointer.attempted === 0}
-            >
-              Undo
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="other-stats-grid">
-        <StatCard
-          label="Assists"
-          value={player.assists}
-          onIncrement={() => updateStat("assists", 1)}
-          onDecrement={() => updateStat("assists", -1)}
-        />
-        <StatCard
-          label="Off. Rebounds"
-          value={player.offensiveRebounds}
-          onIncrement={() => updateStat("offensiveRebounds", 1)}
-          onDecrement={() => updateStat("offensiveRebounds", -1)}
-        />
-        <StatCard
-          label="Def. Rebounds"
-          value={player.defensiveRebounds}
-          onIncrement={() => updateStat("defensiveRebounds", 1)}
-          onDecrement={() => updateStat("defensiveRebounds", -1)}
-        />
-        <StatCard
-          label="Steals"
-          value={player.steals}
-          onIncrement={() => updateStat("steals", 1)}
-          onDecrement={() => updateStat("steals", -1)}
-        />
-        <StatCard
-          label="Blocks"
-          value={player.blocks}
-          onIncrement={() => updateStat("blocks", 1)}
-          onDecrement={() => updateStat("blocks", -1)}
-        />
-        <StatCard
-          label="Turnovers"
-          value={player.turnovers}
-          onIncrement={() => updateStat("turnovers", 1)}
-          onDecrement={() => updateStat("turnovers", -1)}
-        />
-        <StatCard
-          label="Fouls"
-          value={player.fouls}
-          onIncrement={() => updateStat("fouls", 1)}
-          onDecrement={() => updateStat("fouls", -1)}
+    <div className="stat-keeper-panel">
+      {/* Left: stat entry */}
+      <div className="stat-keeper-left">
+        <PlayerStatEntry
+          player={player}
+          playerIndex={playerIndex}
+          players={players}
+          totalRebounds={totalRebounds}
+          onSelectPlayer={onSelectPlayer}
+          onShot={handleShot}
+          onUndo={handleUndo}
+          onUpdateStat={updateStat}
+          onReboundIncrement={handleReboundIncrement}
+          onReboundDecrement={handleReboundDecrement}
         />
       </div>
-    </div>
-  );
-}
-
-interface StatCardProps {
-  label: string;
-  value: number;
-  onIncrement: () => void;
-  onDecrement: () => void;
-}
-
-function StatCard({ label, value, onIncrement, onDecrement }: StatCardProps) {
-  return (
-    <div className="stat-card">
-      <div className="stat-label">{label}</div>
-      <div className="stat-value">{value}</div>
-      <div className="stat-controls">
-        <button className="stat-increment" onClick={onIncrement}>
-          +
-        </button>
-        <button className="stat-decrement" onClick={onDecrement}>
-          -
-        </button>
+      {/* Right: box score */}
+      <div className="stat-keeper-right">
+        <TeamStatsTable team={team} />
       </div>
     </div>
   );
