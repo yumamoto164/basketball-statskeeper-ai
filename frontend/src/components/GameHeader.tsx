@@ -27,7 +27,7 @@ function GameHeader({
         <span className="scoreboard-team-name">{awayTeamName || "Away"}</span>
       </div>
       <button className="end-game-button" onClick={onEndGame}>
-        End Game
+        Back to Player Entry
       </button>
     </div>
   );
