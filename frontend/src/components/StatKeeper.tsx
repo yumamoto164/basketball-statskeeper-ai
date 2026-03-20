@@ -1,9 +1,7 @@
 import { useContext, useRef, useState } from "react";
 import type { Player } from "../types";
 import GameHeader from "./GameHeader";
-import PlayerRoster from "./PlayerRoster";
 import StatEntryPanel from "./StatEntryPanel";
-import TeamStatsTable from "./TeamStatsTable";
 import SaveStatsAsCSVButton from "./SaveStatsButton";
 import AudioRecorder from "./AudioRecorder";
 import { StatsContext } from "../App";
@@ -89,6 +87,11 @@ function StatKeeper({
     setSelectedPlayerIndex(index);
   };
 
+  const handleTeamChange = (team: "home" | "away") => {
+    setSelectedTeam(team);
+    setSelectedPlayerIndex(null);
+  };
+
   const selectedPlayer =
     selectedPlayerIndex !== null
       ? selectedTeam === "home"
@@ -114,39 +117,35 @@ function StatKeeper({
             shotUpdateStacks={shotUpdateStacks}
           />
         </div>
-        <div className="stat-keeper-top">
-          <PlayerRoster
-            team="home"
-            teamName={homeTeamName}
-            selectedPlayerIndex={
-              selectedTeam === "home" ? selectedPlayerIndex : null
-            }
-            onPlayerSelect={(index) => handlePlayerSelect("home", index)}
-          />
 
-          <StatEntryPanel
-            player={selectedPlayer}
-            team={selectedTeam}
-            playerIndex={selectedPlayerIndex}
-            onUpdateStat={updateStat}
-            onUpdateShot={updateShot}
-            shotUpdateStacks={shotUpdateStacks}
-          />
-
-          <PlayerRoster
-            team="away"
-            teamName={awayTeamName}
-            selectedPlayerIndex={
-              selectedTeam === "away" ? selectedPlayerIndex : null
-            }
-            onPlayerSelect={(index) => handlePlayerSelect("away", index)}
-          />
+        {/* Team Toggle */}
+        <div className="team-toggle">
+          <button
+            className={`team-toggle-btn ${selectedTeam === "home" ? "team-toggle-home-active" : ""}`}
+            onClick={() => handleTeamChange("home")}
+          >
+            {homeTeamName || "Home"}
+          </button>
+          <button
+            className={`team-toggle-btn ${selectedTeam === "away" ? "team-toggle-away-active" : ""}`}
+            onClick={() => handleTeamChange("away")}
+          >
+            {awayTeamName || "Away"}
+          </button>
         </div>
 
-        <div className="stat-keeper-bottom">
-          <TeamStatsTable team="home" teamName={homeTeamName} />
-          <TeamStatsTable team="away" teamName={awayTeamName} />
-        </div>
+        <StatEntryPanel
+          player={selectedPlayer}
+          team={selectedTeam}
+          teamName={selectedTeam === "home" ? homeTeamName : awayTeamName}
+          playerIndex={selectedPlayerIndex}
+          players={selectedTeam === "home" ? homePlayers : awayPlayers}
+          onSelectPlayer={(index) => handlePlayerSelect(selectedTeam, index)}
+          onUpdateStat={updateStat}
+          onUpdateShot={updateShot}
+          shotUpdateStacks={shotUpdateStacks}
+        />
+
         <div style={{ textAlign: "center", width: "100%" }}>
           <SaveStatsAsCSVButton
             homeTeamName={homeTeamName}

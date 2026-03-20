@@ -4,14 +4,10 @@ import type { Player } from "../types";
 
 interface TeamStatsTableProps {
   team: "home" | "away";
-  teamName: string;
 }
 
-function TeamStatsTable({ team, teamName }: TeamStatsTableProps) {
+function TeamStatsTable({ team }: TeamStatsTableProps) {
   const isHome = team === "home";
-  const headerClass = isHome
-    ? "stats-table-header home-header"
-    : "stats-table-header away-header";
   const { homePlayers, awayPlayers } = useContext(StatsContext);
   const players = isHome ? homePlayers : awayPlayers;
 
@@ -38,15 +34,13 @@ function TeamStatsTable({ team, teamName }: TeamStatsTableProps) {
     return player.offensiveRebounds + player.defensiveRebounds;
   };
 
+  const theadClass = isHome ? "stats-thead-home" : "stats-thead-away";
+
   return (
     <div className="team-stats-table">
-      <div className={headerClass}>
-        <div className="stats-table-dot"></div>
-        <span>{teamName || (isHome ? "Team A" : "Team B")} Stats</span>
-      </div>
       <div className="stats-table-container">
         <table className="stats-table">
-          <thead>
+          <thead className={theadClass}>
             <tr>
               <th>#</th>
               <th>Player</th>

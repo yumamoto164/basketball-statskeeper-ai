@@ -48,7 +48,7 @@ export const AudioRecorder = ({
     <div>
       <Tooltip title={TOOL_TIP_TEXT} arrow placement="top">
         <span>
-          <button onClick={handleOpenModal}>
+          <button onClick={handleOpenModal} style={{ backgroundColor: "#374151", color: "white" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <LuSparkles />
               {"Auto-Record By Voice"}
